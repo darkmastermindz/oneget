@@ -22,6 +22,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
     {
         private static Dictionary<ZipCompressionMethod, Func<Stream, Stream>>
             compressionStreamCreators;
+
         private static Dictionary<ZipCompressionMethod, Func<Stream, Stream>>
             decompressionStreamCreators;
 
@@ -37,28 +38,28 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 ZipEngine.RegisterCompressionStreamCreator(
                     ZipCompressionMethod.Store,
                     CompressionMode.Compress,
-                    delegate(Stream stream)
+                    delegate (Stream stream)
                     {
                         return stream;
                     });
                 ZipEngine.RegisterCompressionStreamCreator(
                     ZipCompressionMethod.Deflate,
                     CompressionMode.Compress,
-                    delegate(Stream stream)
+                    delegate (Stream stream)
                     {
                         return new DeflateStream(stream, CompressionMode.Compress, true);
                     });
                 ZipEngine.RegisterCompressionStreamCreator(
                     ZipCompressionMethod.Store,
                     CompressionMode.Decompress,
-                    delegate(Stream stream)
+                    delegate (Stream stream)
                     {
                         return stream;
                     });
                 ZipEngine.RegisterCompressionStreamCreator(
                     ZipCompressionMethod.Deflate,
                     CompressionMode.Decompress,
-                    delegate(Stream stream)
+                    delegate (Stream stream)
                     {
                         return new DeflateStream(stream, CompressionMode.Decompress, true);
                     });
@@ -119,6 +120,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
         // Progress data
         private string currentFileName;
+
         private int currentFileNumber;
         private int totalFiles;
         private long currentFileBytesProcessed;
@@ -148,14 +150,8 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         /// </summary>
         public string ArchiveComment
         {
-            get
-            {
-                return this.comment;
-            }
-            set
-            {
-                this.comment = value;
-            }
+            get => comment;
+            set => comment = value;
         }
 
         /// <summary>
@@ -187,6 +183,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 case ZipFileHeader.SPANSIG:
                 case ZipFileHeader.SPANSIG2:
                     return true;
+
                 default:
                     return false;
             }
@@ -214,7 +211,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 // Check the first header directory offset to decide whether the entire
                 // archive needs to be offset or not.
 
-                ZipEndOfCentralDirectory eocd = this.GetEOCD(null, stream);
+                ZipEndOfCentralDirectory eocd = GetEOCD(null, stream);
                 if (eocd != null && eocd.totalEntries > 0)
                 {
                     stream.Seek(eocd.dirOffset, SeekOrigin.Begin);
@@ -259,7 +256,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
             lock (this)
             {
-                IList<ZipFileHeader> headers = this.GetCentralDirectory(streamContext);
+                IList<ZipFileHeader> headers = GetCentralDirectory(streamContext);
                 if (headers == null)
                 {
                     throw new ZipException("Zip central directory not found.");
@@ -285,13 +282,13 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         private IList<ZipFileHeader> GetCentralDirectory(IUnpackStreamContext streamContext)
         {
             Stream archiveStream = null;
-            this.currentArchiveNumber = 0;
+            currentArchiveNumber = 0;
             try
             {
                 List<ZipFileHeader> headers = new List<ZipFileHeader>();
-                archiveStream = this.OpenArchive(streamContext, 0);
+                archiveStream = OpenArchive(streamContext, 0);
 
-                ZipEndOfCentralDirectory eocd = this.GetEOCD(streamContext, archiveStream);
+                ZipEndOfCentralDirectory eocd = GetEOCD(streamContext, archiveStream);
                 if (eocd == null)
                 {
                     return null;
@@ -306,7 +303,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 if (eocd.dirOffset > archiveStream.Length - ZipFileHeader.CFH_FIXEDSIZE)
                 {
                     streamContext.CloseArchiveReadStream(
-                        this.currentArchiveNumber, String.Empty, archiveStream);
+                        currentArchiveNumber, string.Empty, archiveStream);
                     archiveStream = null;
                 }
                 else
@@ -316,16 +313,16 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                     if (sig != ZipFileHeader.CFHSIG)
                     {
                         streamContext.CloseArchiveReadStream(
-                            this.currentArchiveNumber, String.Empty, archiveStream);
+                            currentArchiveNumber, string.Empty, archiveStream);
                         archiveStream = null;
                     }
                 }
 
                 if (archiveStream == null)
                 {
-                    this.currentArchiveNumber = (short)(eocd.dirStartDiskNumber + 1);
+                    currentArchiveNumber = (short)(eocd.dirStartDiskNumber + 1);
                     archiveStream = streamContext.OpenArchiveReadStream(
-                        this.currentArchiveNumber, String.Empty, this);
+                        currentArchiveNumber, string.Empty, this);
 
                     if (archiveStream == null)
                     {
@@ -350,15 +347,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                         archiveStream.Position == archiveStream.Length)
                     {
                         streamContext.CloseArchiveReadStream(
-                            this.currentArchiveNumber, String.Empty, archiveStream);
-                        this.currentArchiveNumber++;
+                            currentArchiveNumber, string.Empty, archiveStream);
+                        currentArchiveNumber++;
                         archiveStream = streamContext.OpenArchiveReadStream(
-                            this.currentArchiveNumber, String.Empty, this);
+                            currentArchiveNumber, string.Empty, this);
                         if (archiveStream == null)
                         {
-                            this.currentArchiveNumber = 0;
+                            currentArchiveNumber = 0;
                             archiveStream = streamContext.OpenArchiveReadStream(
-                                this.currentArchiveNumber, String.Empty, this);
+                                currentArchiveNumber, string.Empty, this);
                         }
                     }
                 }
@@ -370,7 +367,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 if (archiveStream != null)
                 {
                     streamContext.CloseArchiveReadStream(
-                        this.currentArchiveNumber, String.Empty, archiveStream);
+                        currentArchiveNumber, string.Empty, archiveStream);
                 }
             }
         }
@@ -412,7 +409,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                 throw new ZipException("Invalid end of central directory record");
             }
 
-            if (eocd.dirOffset == (long)UInt32.MaxValue)
+            if (eocd.dirOffset == uint.MaxValue)
             {
                 string saveComment = eocd.comment;
 
@@ -457,37 +454,37 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
         private void ResetProgressData()
         {
-            this.currentFileName = null;
-            this.currentFileNumber = 0;
-            this.totalFiles = 0;
-            this.currentFileBytesProcessed = 0;
-            this.currentFileTotalBytes = 0;
-            this.currentArchiveName = null;
-            this.currentArchiveNumber = 0;
-            this.totalArchives = 0;
-            this.currentArchiveBytesProcessed = 0;
-            this.currentArchiveTotalBytes = 0;
-            this.fileBytesProcessed = 0;
-            this.totalFileBytes = 0;
+            currentFileName = null;
+            currentFileNumber = 0;
+            totalFiles = 0;
+            currentFileBytesProcessed = 0;
+            currentFileTotalBytes = 0;
+            currentArchiveName = null;
+            currentArchiveNumber = 0;
+            totalArchives = 0;
+            currentArchiveBytesProcessed = 0;
+            currentArchiveTotalBytes = 0;
+            fileBytesProcessed = 0;
+            totalFileBytes = 0;
         }
 
         private void OnProgress(ArchiveProgressType progressType)
         {
             ArchiveProgressEventArgs e = new ArchiveProgressEventArgs(
                 progressType,
-                this.currentFileName,
-                this.currentFileNumber >= 0 ? this.currentFileNumber : 0,
-                this.totalFiles,
-                this.currentFileBytesProcessed,
-                this.currentFileTotalBytes,
-                this.currentArchiveName,
-                this.currentArchiveNumber,
-                this.totalArchives,
-                this.currentArchiveBytesProcessed,
-                this.currentArchiveTotalBytes,
-                this.fileBytesProcessed,
-                this.totalFileBytes);
-            this.OnProgress(e);
+                currentFileName,
+                currentFileNumber >= 0 ? currentFileNumber : 0,
+                totalFiles,
+                currentFileBytesProcessed,
+                currentFileTotalBytes,
+                currentArchiveName,
+                currentArchiveNumber,
+                totalArchives,
+                currentArchiveBytesProcessed,
+                currentArchiveTotalBytes,
+                fileBytesProcessed,
+                totalFileBytes);
+            OnProgress(e);
         }
     }
 }

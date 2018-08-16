@@ -13,8 +13,11 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.InteropServices;
     using System.Security;
+
 #if !CORECLR
+
     using System.Security.Permissions;
+
 #endif
 
     /// <summary>
@@ -30,7 +33,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
         internal static class FCI
         {
             internal const int MIN_DISK = 32768;
-            internal const int MAX_DISK = Int32.MaxValue;
+            internal const int MAX_DISK = int.MaxValue;
             internal const int MAX_FOLDER = 0x7FFF8000;
             internal const int MAX_FILENAME = 256;
             internal const int MAX_CABINET_NAME = 256;
@@ -40,19 +43,29 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             internal const int CPU_80386 = 1;
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate IntPtr PFNALLOC(int cb);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void PFNFREE(IntPtr pv);
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNOPEN(string path, int oflag, int pmode, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNREAD(int fileHandle, IntPtr memory, int cb, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNWRITE(int fileHandle, IntPtr memory, int cb, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNCLOSE(int fileHandle, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNSEEK(int fileHandle, int dist, int seekType, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNDELETE(string path, out int err, IntPtr pv);
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNGETNEXTCABINET(IntPtr pccab, uint cbPrevCab, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNFILEPLACED(IntPtr pccab, string path, long fileSize, int continuation, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNGETOPENINFO(string path, out short date, out short time, out short pattribs, out int err, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNSTATUS(STATUS typeStatus, uint cb1, uint cb2, IntPtr pv);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNGETTEMPFILE(IntPtr tempNamePtr, int tempNameSize, IntPtr pv);
 
             /// <summary>
@@ -125,6 +138,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             internal static extern int FlushFolder(Handle hfci, PFNGETNEXTCABINET pfnfcignc, PFNSTATUS pfnfcis);
 
 #if !CORECLR
+
             [SuppressUnmanagedCodeSecurity]
 #endif
             [DllImport("cabinet.dll", EntryPoint = "FCIDestroy", CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, CallingConvention = CallingConvention.Cdecl)]
@@ -146,9 +160,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
                 internal int iDisk;
                 internal int fFailOnIncompressible;
                 internal short setID;
-                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_DISK_NAME)] internal string szDisk = String.Empty;
-                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_CABINET_NAME)] internal string szCab = String.Empty;
-                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_CAB_PATH)] internal string szCabPath = String.Empty;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_DISK_NAME)] internal string szDisk = string.Empty;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_CABINET_NAME)] internal string szCab = string.Empty;
+                [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_CAB_PATH)] internal string szCabPath = string.Empty;
             }
 
             /// <summary>
@@ -168,24 +182,19 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
                 /// <summary>
                 /// Checks if the handle is invalid. An FCI handle is invalid when it is zero.
                 /// </summary>
-                public override bool IsInvalid
-                {
-                    get
-                    {
-                        return this.handle == IntPtr.Zero;
-                    }
-                }
+                public override bool IsInvalid => handle == IntPtr.Zero;
 
                 /// <summary>
                 /// Releases the handle by calling FDIDestroy().
                 /// </summary>
                 /// <returns>True if the release succeeded.</returns>
 #if !CORECLR
+
                 [SecurityPermission(SecurityAction.Assert, UnmanagedCode = true)]
 #endif
                 protected override bool ReleaseHandle()
                 {
-                    return FCI.Destroy(this.handle);
+                    return FCI.Destroy(handle);
                 }
             }
         }
@@ -196,7 +205,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
         /// </summary>
         internal static class FDI
         {
-            internal const int MAX_DISK = Int32.MaxValue;
+            internal const int MAX_DISK = int.MaxValue;
             internal const int MAX_FILENAME = 256;
             internal const int MAX_CABINET_NAME = 256;
             internal const int MAX_CAB_PATH = 256;
@@ -205,12 +214,17 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             internal const int CPU_80386 = 1;
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate IntPtr PFNALLOC(int cb);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void PFNFREE(IntPtr pv);
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNOPEN(string path, int oflag, int pmode);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNREAD(int hf, IntPtr pv, int cb);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNWRITE(int hf, IntPtr pv, int cb);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNCLOSE(int hf);
+
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNSEEK(int hf, int dist, int seektype);
 
             [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate int PFNNOTIFY(NOTIFICATIONTYPE fdint, NOTIFICATION fdin);
@@ -254,6 +268,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             internal static extern int Copy(Handle hfdi, string pszCabinet, string pszCabPath, int flags, PFNNOTIFY pfnfdin, IntPtr pfnfdid, IntPtr pvUser);
 
 #if !CORECLR
+
             [SuppressUnmanagedCodeSecurity]
 #endif
             [DllImport("cabinet.dll", EntryPoint = "FDIDestroy", CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, CallingConvention = CallingConvention.Cdecl)]
@@ -305,10 +320,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
 
                 // Unlike all the other file handles in FCI/FDI, this one is
                 // actually pointer-sized. Use a property to pretend it isn't.
-                internal int hf
-                {
-                    get { return (int)this.hf_ptr; }
-                }
+                internal int hf => (int)hf_ptr;
             }
 
             /// <summary>
@@ -328,13 +340,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
                 /// <summary>
                 /// Checks if the handle is invalid. An FDI handle is invalid when it is zero.
                 /// </summary>
-                public override bool IsInvalid
-                {
-                    get
-                    {
-                        return this.handle == IntPtr.Zero;
-                    }
-                }
+                public override bool IsInvalid => handle == IntPtr.Zero;
 
                 /// <summary>
                 /// Releases the handle by calling FDIDestroy().
@@ -342,7 +348,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
                 /// <returns>True if the release succeeded.</returns>
                 protected override bool ReleaseHandle()
                 {
-                    return FDI.Destroy(this.handle);
+                    return FDI.Destroy(handle);
                 }
             }
         }
@@ -366,15 +372,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             /// </summary>
             internal int Oper
             {
-                get
-                {
-                    return this.erfOper;
-                }
+                get => erfOper;
 
-                set
-                {
-                    this.erfOper = value;
-                }
+                set => erfOper = value;
             }
 
             /// <summary>
@@ -382,15 +382,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             /// </summary>
             internal int Type
             {
-                get
-                {
-                    return this.erfType;
-                }
+                get => erfType;
 
-                set
-                {
-                    this.erfType = value;
-                }
+                set => erfType = value;
             }
 
             /// <summary>
@@ -398,15 +392,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             /// </summary>
             internal bool Error
             {
-                get
-                {
-                    return this.fError != 0;
-                }
+                get => fError != 0;
 
-                set
-                {
-                    this.fError = value ? 1 : 0;
-                }
+                set => fError = value ? 1 : 0;
             }
 
             /// <summary>
@@ -414,9 +402,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Cab
             /// </summary>
             internal void Clear()
             {
-                this.Oper = 0;
-                this.Type = 0;
-                this.Error = false;
+                Oper = 0;
+                Type = 0;
+                Error = false;
             }
         }
     }

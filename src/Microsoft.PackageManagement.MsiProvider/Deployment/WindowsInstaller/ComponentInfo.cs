@@ -19,7 +19,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     /// </summary>
     internal sealed class ComponentInfoCollection : ICollection<ComponentInfo>
     {
-        private Session session;
+        private readonly Session session;
 
         internal ComponentInfoCollection(Session session)
         {
@@ -32,13 +32,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <param name="component">name of the component</param>
         /// <returns>component object</returns>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public ComponentInfo this[string component]
-        {
-            get
-            {
-                return new ComponentInfo(this.session, component);
-            }
-        }
+        public ComponentInfo this[string component] => new ComponentInfo(session, component);
 
         void ICollection<ComponentInfo>.Add(ComponentInfo item)
         {
@@ -57,13 +51,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <returns>true if the component is in the collection, else false</returns>
         public bool Contains(string component)
         {
-            return this.session.Database.CountRows(
+            return session.Database.CountRows(
                 "Component", "`Component` = '" + component + "'") == 1;
         }
 
         bool ICollection<ComponentInfo>.Contains(ComponentInfo item)
         {
-            return item != null && this.Contains(item.Name);
+            return item != null && Contains(item.Name);
         }
 
         /// <summary>
@@ -73,7 +67,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <param name="arrayIndex">offset into the array</param>
         public void CopyTo(ComponentInfo[] array, int arrayIndex)
         {
-            if (array == null) {
+            if (array == null)
+            {
                 throw new ArgumentNullException("array");
             }
             foreach (ComponentInfo component in this)
@@ -85,21 +80,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the number of components defined for the product.
         /// </summary>
-        public int Count
-        {
-            get
-            {
-                return this.session.Database.CountRows("Component");
-            }
-        }
+        public int Count => session.Database.CountRows("Component");
 
-        bool ICollection<ComponentInfo>.IsReadOnly
-        {
-            get
-            {
-                return true;
-            }
-        }
+        bool ICollection<ComponentInfo>.IsReadOnly => true;
 
         bool ICollection<ComponentInfo>.Remove(ComponentInfo item)
         {
@@ -112,22 +95,25 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <returns>an enumerator over all features in the collection</returns>
         public IEnumerator<ComponentInfo> GetEnumerator()
         {
-            using (View compView = this.session.Database.OpenView(
+            using (View compView = session.Database.OpenView(
                 "SELECT `Component` FROM `Component`"))
             {
                 compView.Execute();
 
-                foreach (Record compRec in compView) using (compRec)
+                foreach (Record compRec in compView)
                 {
-                    string comp = compRec.GetString(1);
-                    yield return new ComponentInfo(this.session, comp);
+                    using (compRec)
+                    {
+                        string comp = compRec.GetString(1);
+                        yield return new ComponentInfo(session, comp);
+                    }
                 }
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return this.GetEnumerator();
+            return GetEnumerator();
         }
     }
 
@@ -136,8 +122,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     /// </summary>
     internal class ComponentInfo
     {
-        private Session session;
-        private string name;
+        private readonly Session session;
+        private readonly string name;
 
         internal ComponentInfo(Session session, string name)
         {
@@ -148,13 +134,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the name of the component (primary key in the Component table).
         /// </summary>
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-        }
+        public string Name => name;
 
         /// <summary>
         /// Gets the current install state of the designated Component.
@@ -170,20 +150,19 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                int installedState, actionState;
-                uint ret = RemotableNativeMethods.MsiGetComponentState((int) this.session.Handle, this.name, out installedState, out actionState);
+                uint ret = RemotableNativeMethods.MsiGetComponentState((int)session.Handle, name, out int installedState, out int actionState);
                 if (ret != 0)
                 {
-                    if (ret == (uint) NativeMethods.Error.UNKNOWN_COMPONENT)
+                    if (ret == (uint)NativeMethods.Error.UNKNOWN_COMPONENT)
                     {
-                        throw InstallerException.ExceptionFromReturnCode(ret, this.name);
+                        throw InstallerException.ExceptionFromReturnCode(ret, name);
                     }
                     else
                     {
                         throw InstallerException.ExceptionFromReturnCode(ret);
                     }
                 }
-                return (InstallState) installedState;
+                return (InstallState)installedState;
             }
         }
 
@@ -203,30 +182,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                int installedState, actionState;
-                uint ret = RemotableNativeMethods.MsiGetComponentState((int) this.session.Handle, this.name, out installedState, out actionState);
+                uint ret = RemotableNativeMethods.MsiGetComponentState((int)session.Handle, name, out int installedState, out int actionState);
                 if (ret != 0)
                 {
-                    if (ret == (uint) NativeMethods.Error.UNKNOWN_COMPONENT)
+                    if (ret == (uint)NativeMethods.Error.UNKNOWN_COMPONENT)
                     {
-                        throw InstallerException.ExceptionFromReturnCode(ret, this.name);
+                        throw InstallerException.ExceptionFromReturnCode(ret, name);
                     }
                     else
                     {
                         throw InstallerException.ExceptionFromReturnCode(ret);
                     }
                 }
-                return (InstallState) actionState;
+                return (InstallState)actionState;
             }
 
             set
             {
-                uint ret = RemotableNativeMethods.MsiSetComponentState((int) this.session.Handle, this.name, (int) value);
+                uint ret = RemotableNativeMethods.MsiSetComponentState((int)session.Handle, name, (int)value);
                 if (ret != 0)
                 {
-                    if (ret == (uint) NativeMethods.Error.UNKNOWN_COMPONENT)
+                    if (ret == (uint)NativeMethods.Error.UNKNOWN_COMPONENT)
                     {
-                        throw InstallerException.ExceptionFromReturnCode(ret, this.name);
+                        throw InstallerException.ExceptionFromReturnCode(ret, name);
                     }
                     else
                     {
@@ -252,26 +230,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             StringBuilder driveBuf = new StringBuilder(20);
             for (uint i = 0; true; i++)
             {
-                int cost, tempCost;
-                uint driveBufSize = (uint) driveBuf.Capacity;
+                uint driveBufSize = (uint)driveBuf.Capacity;
                 uint ret = RemotableNativeMethods.MsiEnumComponentCosts(
-                    (int) this.session.Handle,
-                    this.name,
+                    (int)session.Handle,
+                    name,
                     i,
-                    (int) installState,
+                    (int)installState,
                     driveBuf,
                     ref driveBufSize,
-                    out cost,
-                    out tempCost);
-                if (ret == (uint) NativeMethods.Error.NO_MORE_ITEMS) break;
-                if (ret == (uint) NativeMethods.Error.MORE_DATA)
+                    out int cost,
+                    out int tempCost);
+                if (ret == (uint)NativeMethods.Error.NO_MORE_ITEMS)
                 {
-                    driveBuf.Capacity = (int) ++driveBufSize;
+                    break;
+                }
+
+                if (ret == (uint)NativeMethods.Error.MORE_DATA)
+                {
+                    driveBuf.Capacity = (int)++driveBufSize;
                     ret = RemotableNativeMethods.MsiEnumComponentCosts(
-                        (int) this.session.Handle,
-                        this.name,
+                        (int)session.Handle,
+                        name,
                         i,
-                        (int) installState,
+                        (int)installState,
                         driveBuf,
                         ref driveBufSize,
                         out cost,

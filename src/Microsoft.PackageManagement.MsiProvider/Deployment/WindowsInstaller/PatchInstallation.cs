@@ -30,13 +30,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msienumpatches.asp">MsiEnumPatches</a>
         /// </p></remarks>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public static IEnumerable<PatchInstallation> AllPatches
-        {
-            get
-            {
-                return PatchInstallation.GetPatches(null, null, null, UserContexts.All, PatchStates.All);
-            }
-        }
+        public static IEnumerable<PatchInstallation> AllPatches => PatchInstallation.GetPatches(null, null, null, UserContexts.All, PatchStates.All);
 
         /// <summary>
         /// Enumerates patch installations based on certain criteria.
@@ -71,30 +65,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             StringBuilder buf = new StringBuilder(40);
             StringBuilder targetProductBuf = new StringBuilder(40);
-            UserContexts targetContext;
             StringBuilder targetSidBuf = new StringBuilder(40);
             for (uint i = 0; ; i++)
             {
-                uint targetSidBufSize = (uint) targetSidBuf.Capacity;
+                uint targetSidBufSize = (uint)targetSidBuf.Capacity;
                 uint ret = NativeMethods.MsiEnumPatchesEx(
                     targetProductCode,
                     userSid,
                     context,
-                    (uint) states,
+                    (uint)states,
                     i,
                     buf,
                     targetProductBuf,
-                    out targetContext,
+                    out UserContexts targetContext,
                     targetSidBuf,
                     ref targetSidBufSize);
-                if (ret == (uint) NativeMethods.Error.MORE_DATA)
+                if (ret == (uint)NativeMethods.Error.MORE_DATA)
                 {
-                    targetSidBuf.Capacity = (int) ++targetSidBufSize;
+                    targetSidBuf.Capacity = (int)++targetSidBufSize;
                     ret = NativeMethods.MsiEnumPatchesEx(
                         targetProductCode,
                         userSid,
                         context,
-                        (uint) states,
+                        (uint)states,
                         i,
                         buf,
                         targetProductBuf,
@@ -103,7 +96,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                         ref targetSidBufSize);
                 }
 
-                if (ret == (uint) NativeMethods.Error.NO_MORE_ITEMS)
+                if (ret == (uint)NativeMethods.Error.NO_MORE_ITEMS)
                 {
                     break;
                 }
@@ -125,7 +118,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             }
         }
 
-        private string productCode;
+        private readonly string productCode;
 
         /// <summary>
         /// Creates a new object for accessing information about a patch installation on the current system.
@@ -174,61 +167,31 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the patch code (GUID) of the patch.
         /// </summary>
-        public string PatchCode
-        {
-            get
-            {
-                return this.InstallationCode;
-            }
-        }
+        public string PatchCode => InstallationCode;
 
         /// <summary>
         /// Gets the ProductCode (GUID) of the product.
         /// </summary>
-        public string ProductCode
-        {
-            get
-            {
-                return this.productCode;
-            }
-        }
+        public string ProductCode => productCode;
 
         /// <summary>
         /// Gets a value indicating whether this patch is currently installed.
         /// </summary>
-        public override bool IsInstalled
-        {
-            get
-            {
-                return (this.State & PatchStates.Applied) != 0;
-            }
-        }
+        public override bool IsInstalled => (State & PatchStates.Applied) != 0;
 
         /// <summary>
         /// Gets a value indicating whether this patch is marked as obsolete.
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Obsoleted")]
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsObsoleted
-        {
-            get
-            {
-                return (this.State & PatchStates.Obsoleted) != 0;
-            }
-        }
+        public bool IsObsoleted => (State & PatchStates.Obsoleted) != 0;
 
         /// <summary>
         /// Gets a value indicating whether this patch is present but has been
         /// superseded by a more recent installed patch.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsSuperseded
-        {
-            get
-            {
-                return (this.State & PatchStates.Superseded) != 0;
-            }
-        }
+        public bool IsSuperseded => (State & PatchStates.Superseded) != 0;
 
         internal override int InstallationType
         {
@@ -249,7 +212,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             get
             {
                 string stateString = this["State"];
-                return (PatchStates) Int32.Parse(stateString, CultureInfo.InvariantCulture.NumberFormat);
+                return (PatchStates)int.Parse(stateString, CultureInfo.InvariantCulture.NumberFormat);
             }
         }
 
@@ -257,13 +220,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// Gets the cached patch file that the product uses.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string LocalPackage
-        {
-            get
-            {
-                return this["LocalPackage"];
-            }
-        }
+        public string LocalPackage => this["LocalPackage"];
 
         /// <summary>
         /// Gets the set of patch transforms that the last patch
@@ -274,14 +231,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// if the user is not logged on.
         /// </p></remarks>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string Transforms
-        {
-            get
-            {
+        public string Transforms =>
                 // TODO: convert to IList<string>?
-                return this["Transforms"];
-            }
-        }
+                this["Transforms"];
 
         /// <summary>
         /// Gets the date and time when the patch is applied to the product.
@@ -313,25 +265,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "Uninstallable")]
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool Uninstallable
-        {
-            get
-            {
-                return this["Uninstallable"] == "1";
-            }
-        }
+        public bool Uninstallable => this["Uninstallable"] == "1";
 
         /// <summary>
         /// Get the registered display name for the patch.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string DisplayName
-        {
-            get
-            {
-                return this["DisplayName"];
-            }
-        }
+        public string DisplayName => this["DisplayName"];
 
         /// <summary>
         /// Gets the registered support information URL for the patch.
@@ -375,26 +315,26 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 uint bufSize = 0;
                 uint ret;
 
-                if (this.Context == UserContexts.UserManaged ||
-                    this.Context == UserContexts.UserUnmanaged ||
-                    this.Context == UserContexts.Machine)
+                if (Context == UserContexts.UserManaged ||
+                    Context == UserContexts.UserUnmanaged ||
+                    Context == UserContexts.Machine)
                 {
                     ret = NativeMethods.MsiGetPatchInfoEx(
-                        this.PatchCode,
-                        this.ProductCode,
-                        this.UserSid,
-                        this.Context,
+                        PatchCode,
+                        ProductCode,
+                        UserSid,
+                        Context,
                         propertyName,
                         buf,
                         ref bufSize);
-                    if (ret == (uint) NativeMethods.Error.MORE_DATA)
+                    if (ret == (uint)NativeMethods.Error.MORE_DATA)
                     {
-                        buf.Capacity = (int) ++bufSize;
+                        buf.Capacity = (int)++bufSize;
                         ret = NativeMethods.MsiGetPatchInfoEx(
-                            this.PatchCode,
-                            this.ProductCode,
-                            this.UserSid,
-                            this.Context,
+                            PatchCode,
+                            ProductCode,
+                            UserSid,
+                            Context,
                             propertyName,
                             buf,
                             ref bufSize);
@@ -403,15 +343,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 else
                 {
                     ret = NativeMethods.MsiGetPatchInfo(
-                        this.PatchCode,
+                        PatchCode,
                         propertyName,
                         buf,
                         ref bufSize);
-                    if (ret == (uint) NativeMethods.Error.MORE_DATA)
+                    if (ret == (uint)NativeMethods.Error.MORE_DATA)
                     {
-                        buf.Capacity = (int) ++bufSize;
+                        buf.Capacity = (int)++bufSize;
                         ret = NativeMethods.MsiGetPatchInfo(
-                            this.PatchCode,
+                            PatchCode,
                             propertyName,
                             buf,
                             ref bufSize);

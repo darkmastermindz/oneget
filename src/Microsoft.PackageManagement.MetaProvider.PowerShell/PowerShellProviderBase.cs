@@ -12,67 +12,67 @@
 //  limitations under the License.
 //
 
-using Microsoft.PackageManagement.Internal.Utility.Platform;
-
-namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Management.Automation;
-    using System.Threading;
+namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal
+{
     using Microsoft.PackageManagement.Internal.Utility.Extensions;
     using Microsoft.PackageManagement.Internal.Utility.Platform;
-    using Messages = Microsoft.PackageManagement.MetaProvider.PowerShell.Internal.Resources.Messages;
+    using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Management.Automation;
+    using System.Threading;
+    using Messages = Microsoft.PackageManagement.MetaProvider.PowerShell.Internal.Resources.Messages;
 
-    public class PowerShellProviderBase : IDisposable {
-        private object _lock = new Object();
+    public class PowerShellProviderBase : IDisposable
+    {
+        private readonly object _lock = new object();
         protected PSModuleInfo _module;
         private PowerShell _powershell;
         private ManualResetEvent _reentrancyLock = new ManualResetEvent(true);
         private readonly Dictionary<string, CommandInfo> _allCommands = new Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, CommandInfo> _methods = new Dictionary<string, CommandInfo>(StringComparer.OrdinalIgnoreCase);
 
-        public PowerShellProviderBase(PowerShell ps, PSModuleInfo module) {
-            if (module == null) {
-                throw new ArgumentNullException("module");
-            }
-
+        public PowerShellProviderBase(PowerShell ps, PSModuleInfo module)
+        {
             _powershell = ps;
-            _module = module;
+            _module = module ?? throw new ArgumentNullException("module");
 
             // combine all the cmdinfos we care about
             // but normalize the keys as we go (remove any '-' '_' chars)
-            foreach (var k in _module.ExportedAliases.Keys) {
+            foreach (string k in _module.ExportedAliases.Keys)
+            {
                 _allCommands.AddOrSet(k.Replace("-", "").Replace("_", ""), _module.ExportedAliases[k]);
             }
-            foreach (var k in _module.ExportedCmdlets.Keys) {
+            foreach (string k in _module.ExportedCmdlets.Keys)
+            {
                 _allCommands.AddOrSet(k.Replace("-", "").Replace("_", ""), _module.ExportedCmdlets[k]);
             }
-            foreach (var k in _module.ExportedFunctions.Keys) {
+            foreach (string k in _module.ExportedFunctions.Keys)
+            {
                 _allCommands.AddOrSet(k.Replace("-", "").Replace("_", ""), _module.ExportedFunctions[k]);
             }
         }
 
-        public string ModulePath {
-            get {
-                return _module.Path;
-            }
-        }
+        public string ModulePath => _module.Path;
 
-        public void Dispose() {
+        public void Dispose()
+        {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void Dispose(bool disposing) {
-            if (disposing) {
-                if (_powershell != null) {
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                if (_powershell != null)
+                {
                     _powershell.Dispose();
                     _powershell = null;
                 }
 
-                if (_reentrancyLock != null) {
+                if (_reentrancyLock != null)
+                {
                     _reentrancyLock.Dispose();
                     _reentrancyLock = null;
                 }
@@ -81,48 +81,61 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
             }
         }
 
-        internal CommandInfo GetMethod(string methodName) {
-            return _methods.GetOrAdd(methodName, () => {
-                if (_allCommands.ContainsKey(methodName)) {
+        internal CommandInfo GetMethod(string methodName)
+        {
+            return _methods.GetOrAdd(methodName, () =>
+            {
+                if (_allCommands.ContainsKey(methodName))
+                {
                     return _allCommands[methodName];
                 }
 
                 // try simple plurals to single
-                if (methodName.EndsWith("s", StringComparison.OrdinalIgnoreCase)) {
-                    var meth = methodName.Substring(0, methodName.Length - 1);
-                    if (_allCommands.ContainsKey(meth)) {
+                if (methodName.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+                {
+                    string meth = methodName.Substring(0, methodName.Length - 1);
+                    if (_allCommands.ContainsKey(meth))
+                    {
                         return _allCommands[meth];
                     }
                 }
 
                 // try words like Dependencies to Dependency
-                if (methodName.EndsWith("cies", StringComparison.OrdinalIgnoreCase)) {
-                    var meth = methodName.Substring(0, methodName.Length - 4) + "cy";
-                    if (_allCommands.ContainsKey(meth)) {
+                if (methodName.EndsWith("cies", StringComparison.OrdinalIgnoreCase))
+                {
+                    string meth = methodName.Substring(0, methodName.Length - 4) + "cy";
+                    if (_allCommands.ContainsKey(meth))
+                    {
                         return _allCommands[meth];
                     }
                 }
 
                 // try IsFoo to Test-IsFoo
-                if (methodName.IndexOf("Is", StringComparison.OrdinalIgnoreCase) == 0) {
-                    var meth = "test" + methodName;
-                    if (_allCommands.ContainsKey(meth)) {
+                if (methodName.IndexOf("Is", StringComparison.OrdinalIgnoreCase) == 0)
+                {
+                    string meth = "test" + methodName;
+                    if (_allCommands.ContainsKey(meth))
+                    {
                         return _allCommands[meth];
                     }
                 }
 
-                if (methodName.IndexOf("add", StringComparison.OrdinalIgnoreCase) == 0) {
+                if (methodName.IndexOf("add", StringComparison.OrdinalIgnoreCase) == 0)
+                {
                     // try it with 'register' instead
-                    var result = GetMethod("register" + methodName.Substring(3));
-                    if (result != null) {
+                    CommandInfo result = GetMethod("register" + methodName.Substring(3));
+                    if (result != null)
+                    {
                         return result;
                     }
                 }
 
-                if (methodName.IndexOf("remove", StringComparison.OrdinalIgnoreCase) == 0) {
+                if (methodName.IndexOf("remove", StringComparison.OrdinalIgnoreCase) == 0)
+                {
                     // try it with 'register' instead
-                    var result = GetMethod("unregister" + methodName.Substring(6));
-                    if (result != null) {
+                    CommandInfo result = GetMethod("unregister" + methodName.Substring(6));
+                    if (result != null)
+                    {
                         return result;
                     }
                 }
@@ -135,14 +148,17 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
             // module.ExportedFunctions.FirstOrDefault().Value.Parameters.Values.First().ParameterType
         }
 
-        internal object CallPowerShellWithoutRequest(string method, params object[] args) {
-            var cmdInfo = GetMethod(method);
-            if (cmdInfo == null) {
+        internal object CallPowerShellWithoutRequest(string method, params object[] args)
+        {
+            CommandInfo cmdInfo = GetMethod(method);
+            if (cmdInfo == null)
+            {
                 return null;
             }
 
-            var result = _powershell.InvokeFunction<object>(cmdInfo.Name, null, null, args);
-            if (result == null) {
+            object result = _powershell.InvokeFunction<object>(cmdInfo.Name, null, null, args);
+            if (result == null)
+            {
                 // failure!
                 throw new Exception(Messages.PowershellScriptFunctionReturnsNull.format(_module.Name, method));
             }
@@ -152,10 +168,13 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
 
         // lock is on this instance only
 
-        internal void ReportErrors(PsRequest request, IEnumerable<ErrorRecord> errors) {
-            foreach (var error in errors) {
-                request.Error(error.FullyQualifiedErrorId, error.CategoryInfo.Category.ToString(), error.TargetObject == null ? null : error.TargetObject.ToString(), error.ErrorDetails == null ? error.Exception.Message : error.ErrorDetails.Message);
-                if (!string.IsNullOrWhiteSpace(error.Exception.StackTrace)) {
+        internal void ReportErrors(PsRequest request, IEnumerable<ErrorRecord> errors)
+        {
+            foreach (ErrorRecord error in errors)
+            {
+                request.Error(error.FullyQualifiedErrorId, error.CategoryInfo.Category.ToString(), error.TargetObject?.ToString(), error.ErrorDetails == null ? error.Exception.Message : error.ErrorDetails.Message);
+                if (!string.IsNullOrWhiteSpace(error.Exception.StackTrace))
+                {
                     // give a debug hint if we have a script stack trace. How nice of us.
                     // the exception stack trace gives better stack than the script stack trace
                     request.Debug(Constants.ScriptStackTrace, error.Exception.StackTrace);
@@ -164,26 +183,33 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
         }
 
         private IAsyncResult _stopResult;
-        private object _stopLock = new object();
+        private readonly object _stopLock = new object();
 
-        internal void CancelRequest() {
-            if (!_reentrancyLock.WaitOne(0)) {
+        internal void CancelRequest()
+        {
+            if (!_reentrancyLock.WaitOne(0))
+            {
                 // it's running right now.
 #if !CORECLR
-                    NativeMethods.OutputDebugString("[Cmdlet:debugging] -- Stopping powershell script.");
+                NativeMethods.OutputDebugString("[Cmdlet:debugging] -- Stopping powershell script.");
 #endif
-                lock (_stopLock) {
-                    if (_stopResult == null) {
+                lock (_stopLock)
+                {
+                    if (_stopResult == null)
+                    {
                         _stopResult = _powershell.BeginStop(ar => { }, null);
                     }
                 }
             }
         }
 
-        internal object CallPowerShell(PsRequest request, params object[] args) {
+        internal object CallPowerShell(PsRequest request, params object[] args)
+        {
             // the lock ensures that we're not re-entrant into the same powershell runspace
-            lock (_lock) {
-                if (!_reentrancyLock.WaitOne(0)) {
+            lock (_lock)
+            {
+                if (!_reentrancyLock.WaitOne(0))
+                {
                     // this lock is set to false, meaning we're still in a call **ON THIS THREAD**
                     // this is bad karma -- powershell won't let us call into the runspace again
                     // we're going to throw an error here because this indicates that the currently
@@ -191,8 +217,9 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
                     // into this provider. That's just bad bad bad.
                     throw new Exception("Reentrancy Violation in powershell module");
                 }
-                
-                try {
+
+                try
+                {
                     // otherwise, this is the first time we've been here during this call.
                     _reentrancyLock.Reset();
 
@@ -202,9 +229,9 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
                     object finalValue = null;
                     ConcurrentBag<ErrorRecord> errors = new ConcurrentBag<ErrorRecord>();
 
-                    request.Debug("INVOKING PowerShell Fn {0} with args {1} that has length {2}", request.CommandInfo.Name, String.Join(", ", args), args.Length);
+                    request.Debug("INVOKING PowerShell Fn {0} with args {1} that has length {2}", request.CommandInfo.Name, string.Join(", ", args), args.Length);
 
-                    var result = _powershell.InvokeFunction<object>(request.CommandInfo.Name,
+                    object result = _powershell.InvokeFunction<object>(request.CommandInfo.Name,
                         (sender, e) => output_DataAdded(sender, e, request, ref finalValue),
                         (sender, e) => error_DataAdded(sender, e, request, errors),
                         args);
@@ -223,12 +250,18 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
                     }
 
                     return finalValue;
-                } catch (CmdletInvocationException cie) {
-                    var error = cie.ErrorRecord;
-                    request.Error(error.FullyQualifiedErrorId, error.CategoryInfo.Category.ToString(), error.TargetObject == null ? null : error.TargetObject.ToString(), error.ErrorDetails == null ? error.Exception.Message : error.ErrorDetails.Message);
-                } finally {
-                    lock (_stopLock) {
-                        if (_stopResult != null){
+                }
+                catch (CmdletInvocationException cie)
+                {
+                    ErrorRecord error = cie.ErrorRecord;
+                    request.Error(error.FullyQualifiedErrorId, error.CategoryInfo.Category.ToString(), error.TargetObject?.ToString(), error.ErrorDetails == null ? error.Exception.Message : error.ErrorDetails.Message);
+                }
+                finally
+                {
+                    lock (_stopLock)
+                    {
+                        if (_stopResult != null)
+                        {
                             _powershell.EndStop(_stopResult);
                             _stopResult = null;
                         }
@@ -246,28 +279,23 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
 
         private void error_DataAdded(object sender, DataAddedEventArgs e, PsRequest request, ConcurrentBag<ErrorRecord> errors)
         {
-            PSDataCollection<ErrorRecord> errorStream = sender as PSDataCollection<ErrorRecord>;
-
-            if (errorStream == null)
+            if (!(sender is PSDataCollection<ErrorRecord> errorStream))
             {
                 return;
             }
 
-            var error = errorStream[e.Index];
+            ErrorRecord error = errorStream[e.Index];
 
             if (error != null)
             {
                 // add the error so we can report them later
                 errors.Add(error);
             }
-        
         }
 
         private void output_DataAdded(object sender, DataAddedEventArgs e, PsRequest request, ref object finalValue)
         {
-            PSDataCollection<PSObject> outputstream = sender as PSDataCollection<PSObject>;
-
-            if (outputstream == null)
+            if (!(sender is PSDataCollection<PSObject> outputstream))
             {
                 return;
             }
@@ -275,9 +303,8 @@ namespace Microsoft.PackageManagement.MetaProvider.PowerShell.Internal {
             PSObject psObject = outputstream[e.Index];
             if (psObject != null)
             {
-                var value = psObject.ImmediateBaseObject;
-                var y = value as Yieldable;
-                if (y != null)
+                object value = psObject.ImmediateBaseObject;
+                if (value is Yieldable y)
                 {
                     // yield it to stream the result gradually
                     y.YieldResult(request);

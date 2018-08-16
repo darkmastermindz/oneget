@@ -12,38 +12,33 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
-    using System;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.IO;
-    using System.Linq;
-    using System.Management.Automation;
-    using Microsoft.PackageManagement.Implementation;
-    using Microsoft.PackageManagement.Internal.Implementation;
+namespace Microsoft.PowerShell.PackageManagement.Cmdlets
+{
     using Microsoft.PackageManagement.Internal.Packaging;
     using Microsoft.PackageManagement.Internal.Utility.Async;
     using Microsoft.PackageManagement.Internal.Utility.Collections;
     using Microsoft.PackageManagement.Internal.Utility.Extensions;
+    using Microsoft.PackageManagement.Internal.Utility.Versions;
     using Microsoft.PackageManagement.Packaging;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Linq;
+    using System.Management.Automation;
     using Utility;
     using Directory = System.IO.Directory;
-    using File = System.IO.File;
-    using Microsoft.PackageManagement.Internal.Utility.Versions;
 
     [Cmdlet(VerbsData.Save, Constants.Nouns.PackageNoun, SupportsShouldProcess = true, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=517140")]
-    public sealed class SavePackage : CmdletWithSearchAndSource {
+    public sealed class SavePackage : CmdletWithSearchAndSource
+    {
         public SavePackage()
             : base(new[] {
                 OptionCategory.Provider, OptionCategory.Source, OptionCategory.Package
-            }) {
+            })
+        {
         }
 
-        protected override IEnumerable<string> ParameterSets {
-            get {
-                return new[] {Constants.ParameterSets.PackageByInputObjectSet, ""};
-            }
-        }
+        protected override IEnumerable<string> ParameterSets => new[] { Constants.ParameterSets.PackageByInputObjectSet, "" };
 
         [Parameter(Position = 0, Mandatory = true, ValueFromPipelineByPropertyName = true, ParameterSetName = Constants.ParameterSets.PackageBySearchSet)]
         public override string[] Name { get; set; }
@@ -61,21 +56,18 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
         // Use the base Source property so relative path will be resolved
         public override string[] Source
         {
-            get
-            {
-                return base.Source;
-            }
-            set
-            {
-                base.Source = value;
-            }
+            get => base.Source;
+            set => base.Source = value;
         }
 
-        protected override void GenerateCmdletSpecificParameters(Dictionary<string, object> unboundArguments) {
-            if (!IsInvocation) {
-                var providerNames = PackageManagementService.AllProviderNames;
-                var whatsOnCmdline = GetDynamicParameterValue<string[]>("ProviderName");
-                if (whatsOnCmdline != null) {
+        protected override void GenerateCmdletSpecificParameters(Dictionary<string, object> unboundArguments)
+        {
+            if (!IsInvocation)
+            {
+                IEnumerable<string> providerNames = PackageManagementService.AllProviderNames;
+                string[] whatsOnCmdline = GetDynamicParameterValue<string[]>("ProviderName");
+                if (whatsOnCmdline != null)
+                {
                     providerNames = providerNames.Concat(whatsOnCmdline).Distinct();
                 }
 
@@ -88,7 +80,8 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                     new ValidateSetAttribute(providerNames.ToArray())
                 }));
             }
-            else {
+            else
+            {
                 DynamicParameterDictionary.AddOrSet("ProviderName", new RuntimeDefinedParameter("ProviderName", typeof(string[]), new Collection<Attribute> {
                     new ParameterAttribute {
                         ValueFromPipelineByPropertyName = true,
@@ -100,15 +93,16 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
         }
 
         [Parameter]
-        public string Path {get; set;}
+        public string Path { get; set; }
 
         [Parameter]
-        public string LiteralPath {get; set;}
+        public string LiteralPath { get; set; }
 
         [Parameter(Mandatory = true, ValueFromPipeline = true, ParameterSetName = Constants.ParameterSets.PackageByInputObjectSet)]
-        public SoftwareIdentity InputObject {get; set;}
+        public SoftwareIdentity InputObject { get; set; }
 
-        private string SaveFileName(string packageName) {
+        private string SaveFileName(string packageName)
+        {
             string resolvedPath = null;
 
             try
@@ -127,7 +121,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                     }
                     catch (ItemNotFoundException)
                     {
-                        if(!Force)
+                        if (!Force)
                         {
                             throw;
                         }
@@ -136,13 +130,15 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                     resolvedPath = LiteralPath;
                 }
 
-                if (string.IsNullOrWhiteSpace(resolvedPath)) {
+                if (string.IsNullOrWhiteSpace(resolvedPath))
+                {
                     Error(Constants.Errors.DestinationPathInvalid, resolvedPath, packageName);
                     return null;
                 }
 
                 // If the destination directory doesn't exist, create it
-                if (!Directory.Exists(resolvedPath)) {
+                if (!Directory.Exists(resolvedPath))
+                {
                     Directory.CreateDirectory(resolvedPath);
                 }
 
@@ -156,8 +152,10 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
             }
         }
 
-        public override bool ProcessRecordAsync() {
-            if (string.IsNullOrWhiteSpace(Path) && string.IsNullOrWhiteSpace(LiteralPath)) {
+        public override bool ProcessRecordAsync()
+        {
+            if (string.IsNullOrWhiteSpace(Path) && string.IsNullOrWhiteSpace(LiteralPath))
+            {
                 Error(Constants.Errors.DestinationOrLiteralPathNotSpecified);
                 return false;
             }
@@ -172,7 +170,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                 Error(Constants.Errors.WildCardCharsAreNotSupported, Name.JoinWithComma());
                 return false;
             }
-  
+
             return base.ProcessRecordAsync();
         }
 
@@ -196,7 +194,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                 return false;
             }
 
-            var swids = CheckMatchedDuplicates().ReEnumerable();
+            MutableEnumerable<SoftwareIdentity> swids = CheckMatchedDuplicates().ReEnumerable();
             if (swids == null || !swids.Any())
             {
                 // there are duplicate packages
@@ -210,15 +208,14 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
 
         private bool DownloadPackage(params SoftwareIdentity[] packagesToSave)
         {
-            foreach (var package in packagesToSave)
+            foreach (SoftwareIdentity package in packagesToSave)
             {
                 if (IsCanceled)
                 {
                     return false;
                 }
 
-                var provider = package.Provider;
-
+                Microsoft.PackageManagement.Implementation.PackageProvider provider = package.Provider;
 
                 if (!provider.IsMethodImplemented("DownloadPackage"))
                 {
@@ -227,7 +224,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                 }
 
                 // if we do save-package jquery -path C:\test then savepath would be C:\test
-                var savePath = SaveFileName(package.PackageFilename);
+                string savePath = SaveFileName(package.PackageFilename);
 
                 bool mainPackageDownloaded = false;
 
@@ -237,9 +234,9 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                     // message would be something like What if: Performing the operation "Save Package" on target "'jQuery' to location 'C:\test\test'".
                     if (ShouldProcess(FormatMessageString(Resources.Messages.SavePackageWhatIfDescription, package.Name, savePath), FormatMessageString(Resources.Messages.SavePackage)).Result)
                     {
-                        var host = this.ProviderSpecific(provider);
-                        foreach (var downloadedPkg in provider.DownloadPackage(package, savePath, host).CancelWhen(CancellationEvent.Token))
-                            //foreach (var downloadedPkg in provider.DownloadPackage(package, savePath, ErrorAndWarningContinue ? host.SuppressErrorsAndWarnings(IsProcessing) : host).CancelWhen(CancellationEvent.Token))
+                        Microsoft.PackageManagement.Internal.Api.IHostApi host = this.ProviderSpecific(provider);
+                        foreach (SoftwareIdentity downloadedPkg in provider.DownloadPackage(package, savePath, host).CancelWhen(CancellationEvent.Token))
+                        //foreach (var downloadedPkg in provider.DownloadPackage(package, savePath, ErrorAndWarningContinue ? host.SuppressErrorsAndWarnings(IsProcessing) : host).CancelWhen(CancellationEvent.Token))
                         {
                             if (IsCanceled)
                             {
@@ -248,7 +245,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                             }
 
                             // check whether main package is downloaded;
-                            if (downloadedPkg.Name.EqualsIgnoreCase(package.Name) && (FourPartVersion)downloadedPkg.Version >= (FourPartVersion)package.Version)
+                            if (downloadedPkg.Name.EqualsIgnoreCase(package.Name) && downloadedPkg.Version >= (FourPartVersion)package.Version)
                             {
                                 mainPackageDownloaded = true;
                             }
@@ -257,7 +254,6 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
                             LogEvent(EventTask.Download, EventId.Save, Resources.Messages.PackageSaved, downloadedPkg.Name, downloadedPkg.Version, downloadedPkg.ProviderName, downloadedPkg.Source ?? string.Empty, downloadedPkg.Status ?? string.Empty, downloadedPkg.InstallationPath ?? string.Empty);
                             TraceMessage(Constants.SavePackageTrace, downloadedPkg);
                         }
-
                     }
                     else
                     {

@@ -25,8 +25,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// <remarks>The PatchPackage object only opens the patch database in read-only mode, because
         /// transforms (sub-storages) cannot be read if the database is open in read-write mode.</remarks>
         public PatchPackage(string packagePath)
-            : base(packagePath, (DatabaseOpenMode) ((int) DatabaseOpenMode.ReadOnly | 32))
-            // TODO: figure out what to do about DatabaseOpenMode.Patch
+            : base(packagePath, (DatabaseOpenMode)((int)DatabaseOpenMode.ReadOnly | 32))
+        // TODO: figure out what to do about DatabaseOpenMode.Patch
         {
         }
 
@@ -45,10 +45,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// <param name="args">Items to be formatted</param>
         protected void LogMessage(string format, params object[] args)
         {
-            if(this.Message != null)
-            {
-                this.Message(format, args);
-            }
+            Message?.Invoke(format, args);
         }
 
         /// <summary>
@@ -61,7 +58,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         {
             get
             {
-                string guids = this.SummaryInfo.RevisionNumber;
+                string guids = SummaryInfo.RevisionNumber;
                 return guids.Substring(0, guids.IndexOf('}') + 1);
             }
         }
@@ -76,16 +73,16 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         public string[] GetReplacedPatchCodes()
         {
             ArrayList patchCodeList = new ArrayList();
-            string guids = this.SummaryInfo.RevisionNumber;
+            string guids = SummaryInfo.RevisionNumber;
             int thisGuid = guids.IndexOf('}') + 1;
             int nextGuid = guids.IndexOf('}', thisGuid) + 1;
-            while(nextGuid > 0)
+            while (nextGuid > 0)
             {
                 patchCodeList.Add(guids.Substring(thisGuid, (nextGuid - thisGuid)));
                 thisGuid = nextGuid;
                 nextGuid = guids.IndexOf('}', thisGuid) + 1;
             }
-            return (string[]) patchCodeList.ToArray(typeof(string));
+            return (string[])patchCodeList.ToArray(typeof(string));
         }
 
         /// <summary>
@@ -97,7 +94,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// </remarks>
         public string[] GetTargetProductCodes()
         {
-            string productList = this.SummaryInfo.Template;
+            string productList = SummaryInfo.Template;
             return productList.Split(';');
         }
 
@@ -111,8 +108,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// </remarks>
         public string[] GetTransforms()
         {
-            return this.GetTransforms(false);
+            return GetTransforms(false);
         }
+
         /// <summary>
         /// Gets the names of the transforms included in the patch package.
         /// </summary>
@@ -125,15 +123,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         public string[] GetTransforms(bool includeSpecialTransforms)
         {
             ArrayList transformArray = new ArrayList();
-            string transformList = this.SummaryInfo.LastSavedBy;
-            foreach(string transform in transformList.Split(';', ':'))
+            string transformList = SummaryInfo.LastSavedBy;
+            foreach (string transform in transformList.Split(';', ':'))
             {
-                if(transform.Length != 0 && (includeSpecialTransforms || !transform.StartsWith("#", StringComparison.Ordinal)))
+                if (transform.Length != 0 && (includeSpecialTransforms || !transform.StartsWith("#", StringComparison.Ordinal)))
                 {
                     transformArray.Add(transform);
                 }
             }
-            return (string[]) transformArray.ToArray(typeof(string));
+            return (string[])transformArray.ToArray(typeof(string));
         }
 
         /// <summary>
@@ -145,7 +143,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// </remarks>
         public TransformInfo[] GetTransformsInfo()
         {
-            return this.GetTransformsInfo(false);
+            return GetTransformsInfo(false);
         }
 
         /// <summary>
@@ -156,13 +154,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// <returns>Array containing information about each transform</returns>
         public TransformInfo[] GetTransformsInfo(bool includeSpecialTransforms)
         {
-            string[] transforms = this.GetTransforms(includeSpecialTransforms);
+            string[] transforms = GetTransforms(includeSpecialTransforms);
             ArrayList transformInfoArray = new ArrayList(transforms.Length);
-            foreach(string transform in transforms)
+            foreach (string transform in transforms)
             {
-                transformInfoArray.Add(this.GetTransformInfo(transform));
+                transformInfoArray.Add(GetTransformInfo(transform));
             }
-            return (TransformInfo[]) transformInfoArray.ToArray(typeof(TransformInfo));
+            return (TransformInfo[])transformInfoArray.ToArray(typeof(TransformInfo));
         }
 
         /// <summary>
@@ -177,15 +175,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
             try
             {
                 tempTransformFile = Path.GetTempFileName();
-                this.ExtractTransform(transform, tempTransformFile);
-                using(SummaryInfo transformSummInfo = new SummaryInfo(tempTransformFile, false))
+                ExtractTransform(transform, tempTransformFile);
+                using (SummaryInfo transformSummInfo = new SummaryInfo(tempTransformFile, false))
                 {
                     return new TransformInfo(transform, transformSummInfo);
                 }
             }
             finally
             {
-                if(tempTransformFile != null && File.Exists(tempTransformFile))
+                if (tempTransformFile != null && File.Exists(tempTransformFile))
                 {
                     File.Delete(tempTransformFile);
                 }
@@ -206,34 +204,34 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         public string[] GetValidTransforms(Database installPackage)
         {
             ArrayList transformArray = new ArrayList();
-            string transformList = this.SummaryInfo.LastSavedBy;
-            foreach(string transform in transformList.Split(';', ':'))
+            string transformList = SummaryInfo.LastSavedBy;
+            foreach (string transform in transformList.Split(';', ':'))
             {
-                if(transform.Length != 0 && !transform.StartsWith("#", StringComparison.Ordinal))
+                if (transform.Length != 0 && !transform.StartsWith("#", StringComparison.Ordinal))
                 {
-                    this.LogMessage("Checking validity of transform {0}", transform);
+                    LogMessage("Checking validity of transform {0}", transform);
                     string tempTransformFile = null;
                     try
                     {
                         tempTransformFile = Path.GetTempFileName();
-                        this.ExtractTransform(transform, tempTransformFile);
-                        if(installPackage.IsTransformValid(tempTransformFile))
+                        ExtractTransform(transform, tempTransformFile);
+                        if (installPackage.IsTransformValid(tempTransformFile))
                         {
-                            this.LogMessage("Found valid transform: {0}", transform);
+                            LogMessage("Found valid transform: {0}", transform);
                             transformArray.Add(transform);
                         }
                     }
                     finally
                     {
-                        if(tempTransformFile != null && File.Exists(tempTransformFile))
+                        if (tempTransformFile != null && File.Exists(tempTransformFile))
                         {
                             try { File.Delete(tempTransformFile); }
-                            catch(IOException) { }
+                            catch (IOException) { }
                         }
                     }
                 }
             }
-            return (string[]) transformArray.ToArray(typeof(string));
+            return (string[])transformArray.ToArray(typeof(string));
         }
 
         /// <summary>
@@ -244,16 +242,16 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.P
         /// <param name="extractFile">Location where the transform will be extracted</param>
         public void ExtractTransform(string transform, string extractFile)
         {
-            using(View stgView = this.OpenView("SELECT `Name`, `Data` FROM `_Storages` WHERE `Name` = '{0}'", transform))
+            using (View stgView = OpenView("SELECT `Name`, `Data` FROM `_Storages` WHERE `Name` = '{0}'", transform))
             {
                 stgView.Execute();
                 Record stgRec = stgView.Fetch();
-                if(stgRec == null)
+                if (stgRec == null)
                 {
-                    this.LogMessage("Transform not found: {0}", transform);
+                    LogMessage("Transform not found: {0}", transform);
                     throw new InstallerException("Transform not found: " + transform);
                 }
-                using(stgRec)
+                using (stgRec)
                 {
                     stgRec.GetStream("Data", extractFile);
                 }

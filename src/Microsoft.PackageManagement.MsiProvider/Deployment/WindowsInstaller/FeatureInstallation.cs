@@ -7,7 +7,6 @@
 // </summary>
 //---------------------------------------------------------------------
 
-
 namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 {
     using System;
@@ -36,13 +35,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the name of the feature.
         /// </summary>
-        public string FeatureName
-        {
-            get
-            {
-                return this.Id;
-            }
-        }
+        public string FeatureName => Id;
 
         /// <summary>
         /// Gets the installed state of the feature.
@@ -56,8 +49,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             get
             {
                 int installState = NativeMethods.MsiQueryFeatureState(
-                    this.ProductCode, this.FeatureName);
-                return (InstallState) installState;
+                    ProductCode, FeatureName);
+                return (InstallState)installState;
             }
         }
 
@@ -77,18 +70,18 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 StringBuilder parentBuf = new StringBuilder(256);
                 for (uint i = 0; ; i++)
                 {
-                    uint ret = NativeMethods.MsiEnumFeatures(this.ProductCode, i, featureBuf, parentBuf);
+                    uint ret = NativeMethods.MsiEnumFeatures(ProductCode, i, featureBuf, parentBuf);
 
                     if (ret != 0)
                     {
                         break;
                     }
 
-                    if (featureBuf.ToString() == this.FeatureName)
+                    if (featureBuf.ToString() == FeatureName)
                     {
                         if (parentBuf.Length > 0)
                         {
-                            return new FeatureInstallation(parentBuf.ToString(), this.ProductCode);
+                            return new FeatureInstallation(parentBuf.ToString(), ProductCode);
                         }
                         else
                         {
@@ -115,10 +108,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                uint useCount;
-                ushort useDate;
                 uint ret = NativeMethods.MsiGetFeatureUsage(
-                    this.ProductCode, this.FeatureName, out useCount, out useDate);
+                    ProductCode, FeatureName, out uint useCount, out ushort useDate);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
@@ -137,7 +128,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                         (useDate & 0x001F));
                 }
 
-                return new UsageData((int) useCount, lastUsedDate);
+                return new UsageData((int)useCount, lastUsedDate);
             }
         }
 
@@ -148,8 +139,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1815:OverrideEqualsAndOperatorEqualsOnValueTypes")]
         public struct UsageData
         {
-            private int useCount;
-            private DateTime lastUsedDate;
+            private readonly int useCount;
+            private readonly DateTime lastUsedDate;
 
             [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
             internal UsageData(int useCount, DateTime lastUsedDate)
@@ -162,25 +153,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             /// Gets count of the number of times the feature has been used.
             /// </summary>
             [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-            public int UseCount
-            {
-                get
-                {
-                    return this.useCount;
-                }
-            }
+            public int UseCount => useCount;
 
             /// <summary>
             /// Gets the date the feature was last used.
             /// </summary>
             [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-            public DateTime LastUsedDate
-            {
-                get
-                {
-                    return this.lastUsedDate;
-                }
-            }
+            public DateTime LastUsedDate => lastUsedDate;
         }
     }
 }
