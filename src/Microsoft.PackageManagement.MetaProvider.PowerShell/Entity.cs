@@ -12,29 +12,28 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PackageManagement.MetaProvider.PowerShell
-{
-    using Microsoft.PackageManagement.Internal.Utility.Extensions;
+namespace Microsoft.PackageManagement.MetaProvider.PowerShell {
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Microsoft.PackageManagement.Internal.Utility.Extensions;
 
-    public class Entity
-    {
-        public string Name { get; set; }
-        public string RegId { get; set; }
-        public string Role { get; set; }
+    public class Entity {
+        public string Name {get; set;}
+        public string RegId {get; set;}
+        public string Role {get; set;}
 
-        public IEnumerable<string> Roles
-        {
-            get => (string.IsNullOrWhiteSpace(Role) ? "unknown" : Role).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        public IEnumerable<string> Roles {
+            get {
+                return (string.IsNullOrWhiteSpace(Role) ? "unknown" : Role).Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+            }
             set
             {
-                string[] values = value == null ? new string[0] : value.ToArray();
-                Role = (values.Length == 0) ? "unknown" : value.JoinWith(" ");
+                var values = value == null ? new string[0] : value.ToArray();
+                Role = ( values.Length == 0) ? "unknown" : value.JoinWith(" ");
             }
         }
 
-        public string Thumbprint { get; set; }
+        public string Thumbprint {get; set;}
     }
 }

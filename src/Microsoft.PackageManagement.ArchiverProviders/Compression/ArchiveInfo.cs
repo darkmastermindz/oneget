@@ -31,9 +31,14 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         protected ArchiveInfo(string path)
             : base()
         {
+            if (path == null)
+            {
+                throw new ArgumentNullException("path");
+            }
+
             // protected instance members inherited from FileSystemInfo:
-            OriginalPath = path ?? throw new ArgumentNullException("path");
-            FullPath = Path.GetFullPath(path);
+            this.OriginalPath = path;
+            this.FullPath = Path.GetFullPath(path);
         }
 
         /// <summary>
@@ -41,31 +46,61 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// </summary>
         /// <value>A DirectoryInfo object representing the parent directory of the
         /// archive.</value>
-        public DirectoryInfo Directory => new DirectoryInfo(Path.GetDirectoryName(FullName));
+        public DirectoryInfo Directory
+        {
+            get
+            {
+                return new DirectoryInfo(Path.GetDirectoryName(this.FullName));
+            }
+        }
 
         /// <summary>
         /// Gets the full path of the directory that contains the archive.
         /// </summary>
         /// <value>The full path of the directory that contains the archive.</value>
-        public string DirectoryName => Path.GetDirectoryName(FullName);
+        public string DirectoryName
+        {
+            get
+            {
+                return Path.GetDirectoryName(this.FullName);
+            }
+        }
 
         /// <summary>
         /// Gets the size of the archive.
         /// </summary>
         /// <value>The size of the archive in bytes.</value>
-        public long Length => new FileInfo(FullName).Length;
+        public long Length
+        {
+            get
+            {
+                return new FileInfo(this.FullName).Length;
+            }
+        }
 
         /// <summary>
         /// Gets the file name of the archive.
         /// </summary>
         /// <value>The file name of the archive, not including any path.</value>
-        public override string Name => Path.GetFileName(FullName);
+        public override string Name
+        {
+            get
+            {
+                return Path.GetFileName(this.FullName);
+            }
+        }
 
         /// <summary>
         /// Checks if the archive exists.
         /// </summary>
         /// <value>True if the archive exists; else false.</value>
-        public override bool Exists => File.Exists(FullName);
+        public override bool Exists
+        {
+            get
+            {
+                return File.Exists(this.FullName);
+            }
+        }
 
         /// <summary>
         /// Gets the full path of the archive.
@@ -73,7 +108,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// <returns>The full path of the archive.</returns>
         public override string ToString()
         {
-            return FullName;
+            return this.FullName;
         }
 
         /// <summary>
@@ -81,7 +116,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// </summary>
         public override void Delete()
         {
-            File.Delete(FullName);
+            File.Delete(this.FullName);
         }
 
         /// <summary>
@@ -91,7 +126,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest")]
         public void CopyTo(string destFileName)
         {
-            File.Copy(FullName, destFileName);
+            File.Copy(this.FullName, destFileName);
         }
 
         /// <summary>
@@ -104,7 +139,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest")]
         public void CopyTo(string destFileName, bool overwrite)
         {
-            File.Copy(FullName, destFileName, overwrite);
+            File.Copy(this.FullName, destFileName, overwrite);
         }
 
         /// <summary>
@@ -114,8 +149,8 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest")]
         public void MoveTo(string destFileName)
         {
-            File.Move(FullName, destFileName);
-            FullPath = Path.GetFullPath(destFileName);
+            File.Move(this.FullName, destFileName);
+            this.FullPath = Path.GetFullPath(destFileName);
         }
 
         /// <summary>
@@ -124,9 +159,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// <returns>True if the file is a valid archive; false otherwise.</returns>
         public bool IsValid()
         {
-            using (Stream stream = File.OpenRead(FullName))
+            using (Stream stream = File.OpenRead(this.FullName))
             {
-                using (CompressionEngine compressionEngine = CreateCompressionEngine())
+                using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
                 {
                     return compressionEngine.FindArchiveOffset(stream) >= 0;
                 }
@@ -140,7 +175,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// containing information about a file in the archive.</returns>
         public IList<ArchiveFileInfo> GetFiles()
         {
-            return InternalGetFiles(null);
+            return this.InternalGetFiles((Predicate<string>)null);
         }
 
         /// <summary>
@@ -157,7 +192,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 throw new ArgumentNullException("searchPattern");
             }
 
-            string regexPattern = string.Format(
+            string regexPattern = String.Format(
                 CultureInfo.InvariantCulture,
                 "^{0}$",
                 Regex.Escape(searchPattern).Replace("\\*", ".*").Replace("\\?", "."));
@@ -165,8 +200,8 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                     regexPattern,
                     RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-            return InternalGetFiles(
-                delegate (string match)
+            return this.InternalGetFiles(
+                delegate(string match)
                 {
                     return regex.IsMatch(match);
                 });
@@ -180,7 +215,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "dest")]
         public void Unpack(string destDirectory)
         {
-            Unpack(destDirectory, null);
+            this.Unpack(destDirectory, null);
         }
 
         /// <summary>
@@ -196,14 +231,12 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             string destDirectory,
             EventHandler<ArchiveProgressEventArgs> progressHandler)
         {
-            using (CompressionEngine compressionEngine = CreateCompressionEngine())
+            using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
             {
                 compressionEngine.Progress += progressHandler;
                 ArchiveFileStreamContext streamContext =
-                    new ArchiveFileStreamContext(FullName, destDirectory, null)
-                    {
-                        EnableOffsetOpen = true
-                    };
+                    new ArchiveFileStreamContext(this.FullName, destDirectory, null);
+                streamContext.EnableOffsetOpen = true;
                 compressionEngine.Unpack(streamContext, null);
             }
         }
@@ -231,7 +264,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 throw new ArgumentNullException("destFileName");
             }
 
-            UnpackFiles(
+            this.UnpackFiles(
                 new string[] { fileName },
                 null,
                 new string[] { destFileName });
@@ -260,7 +293,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             string destDirectory,
             IList<string> destFileNames)
         {
-            UnpackFiles(fileNames, destDirectory, destFileNames, null);
+            this.UnpackFiles(fileNames, destDirectory, destFileNames, null);
         }
 
         /// <summary>
@@ -312,7 +345,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
 
             IDictionary<string, string> files =
                 ArchiveInfo.CreateStringDictionary(fileNames, destFileNames);
-            UnpackFileSet(files, destDirectory, progressHandler);
+            this.UnpackFileSet(files, destDirectory, progressHandler);
         }
 
         /// <summary>
@@ -332,7 +365,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             IDictionary<string, string> fileNames,
             string destDirectory)
         {
-            UnpackFileSet(fileNames, destDirectory, null);
+            this.UnpackFileSet(fileNames, destDirectory, null);
         }
 
         /// <summary>
@@ -360,17 +393,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 throw new ArgumentNullException("fileNames");
             }
 
-            using (CompressionEngine compressionEngine = CreateCompressionEngine())
+            using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
             {
                 compressionEngine.Progress += progressHandler;
                 ArchiveFileStreamContext streamContext =
-                    new ArchiveFileStreamContext(FullName, destDirectory, fileNames)
-                    {
-                        EnableOffsetOpen = true
-                    };
+                    new ArchiveFileStreamContext(this.FullName, destDirectory, fileNames);
+                streamContext.EnableOffsetOpen = true;
                 compressionEngine.Unpack(
                     streamContext,
-                    delegate (string match)
+                    delegate(string match)
                     {
                         return fileNames.ContainsKey(match);
                     });
@@ -390,8 +421,8 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// </returns>
         public Stream OpenRead(string fileName)
         {
-            Stream archiveStream = File.OpenRead(FullName);
-            CompressionEngine compressionEngine = CreateCompressionEngine();
+            Stream archiveStream = File.OpenRead(this.FullName);
+            CompressionEngine compressionEngine = this.CreateCompressionEngine();
             Stream fileStream = compressionEngine.Unpack(archiveStream, fileName);
 
             // Attach the archiveStream and compressionEngine to the
@@ -417,7 +448,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// </remarks>
         public StreamReader OpenText(string fileName)
         {
-            return new StreamReader(OpenRead(fileName));
+            return new StreamReader(this.OpenRead(fileName));
         }
 
         /// <summary>
@@ -431,7 +462,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// </remarks>
         public void Pack(string sourceDirectory)
         {
-            Pack(sourceDirectory, false, CompressionLevel.Max, null);
+            this.Pack(sourceDirectory, false, CompressionLevel.Max, null);
         }
 
         /// <summary>
@@ -456,9 +487,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             CompressionLevel compLevel,
             EventHandler<ArchiveProgressEventArgs> progressHandler)
         {
-            IList<string> files = GetRelativeFilePathsInDirectoryTree(
+            IList<string> files = this.GetRelativeFilePathsInDirectoryTree(
                 sourceDirectory, includeSubdirectories);
-            PackFiles(sourceDirectory, files, files, compLevel, progressHandler);
+            this.PackFiles(sourceDirectory, files, files, compLevel, progressHandler);
         }
 
         /// <summary>
@@ -485,7 +516,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             IList<string> sourceFileNames,
             IList<string> fileNames)
         {
-            PackFiles(
+            this.PackFiles(
                 sourceDirectory,
                 sourceFileNames,
                 fileNames,
@@ -541,16 +572,14 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 throw new ArgumentOutOfRangeException("fileNames");
             }
 
-            using (CompressionEngine compressionEngine = CreateCompressionEngine())
+            using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
             {
                 compressionEngine.Progress += progressHandler;
                 IDictionary<string, string> contextFiles =
                     ArchiveInfo.CreateStringDictionary(fileNames, sourceFileNames);
                 ArchiveFileStreamContext streamContext = new ArchiveFileStreamContext(
-                        FullName, sourceDirectory, contextFiles)
-                {
-                    EnableOffsetOpen = true
-                };
+                        this.FullName, sourceDirectory, contextFiles);
+                streamContext.EnableOffsetOpen = true;
                 compressionEngine.CompressionLevel = compLevel;
                 compressionEngine.Pack(streamContext, fileNames);
             }
@@ -572,7 +601,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             string sourceDirectory,
             IDictionary<string, string> fileNames)
         {
-            PackFileSet(sourceDirectory, fileNames, CompressionLevel.Max, null);
+            this.PackFileSet(sourceDirectory, fileNames, CompressionLevel.Max, null);
         }
 
         /// <summary>
@@ -602,14 +631,12 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             string[] fileNamesArray = new string[fileNames.Count];
             fileNames.Keys.CopyTo(fileNamesArray, 0);
 
-            using (CompressionEngine compressionEngine = CreateCompressionEngine())
+            using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
             {
                 compressionEngine.Progress += progressHandler;
                 ArchiveFileStreamContext streamContext = new ArchiveFileStreamContext(
-                        FullName, sourceDirectory, fileNames)
-                {
-                    EnableOffsetOpen = true
-                };
+                        this.FullName, sourceDirectory, fileNames);
+                streamContext.EnableOffsetOpen = true;
                 compressionEngine.CompressionLevel = compLevel;
                 compressionEngine.Pack(streamContext, fileNamesArray);
             }
@@ -627,8 +654,8 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             string dir, bool includeSubdirectories)
         {
             IList<string> fileList = new List<string>();
-            RecursiveGetRelativeFilePathsInDirectoryTree(
-                dir, string.Empty, includeSubdirectories, fileList);
+            this.RecursiveGetRelativeFilePathsInDirectoryTree(
+                dir, String.Empty, includeSubdirectories, fileList);
             return fileList;
         }
 
@@ -640,10 +667,10 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// in the archive.</returns>
         internal ArchiveFileInfo GetFile(string path)
         {
-            IList<ArchiveFileInfo> files = InternalGetFiles(
-                delegate (string match)
+            IList<ArchiveFileInfo> files = this.InternalGetFiles(
+                delegate(string match)
                 {
-                    return string.Compare(
+                    return String.Compare(
                         match, path, StringComparison.OrdinalIgnoreCase) == 0;
                 });
             return (files != null && files.Count > 0 ? files[0] : null);
@@ -709,7 +736,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 foreach (string subDir in System.IO.Directory.GetDirectories(dir))
                 {
                     string subDirName = Path.GetFileName(subDir);
-                    RecursiveGetRelativeFilePathsInDirectoryTree(
+                    this.RecursiveGetRelativeFilePathsInDirectoryTree(
                         Path.Combine(dir, subDirName),
                         Path.Combine(relativeDir, subDirName),
                         includeSubdirectories,
@@ -728,13 +755,11 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// containing information about a file in the archive.</returns>
         private IList<ArchiveFileInfo> InternalGetFiles(Predicate<string> fileFilter)
         {
-            using (CompressionEngine compressionEngine = CreateCompressionEngine())
+            using (CompressionEngine compressionEngine = this.CreateCompressionEngine())
             {
                 ArchiveFileStreamContext streamContext =
-                    new ArchiveFileStreamContext(FullName, null, null)
-                    {
-                        EnableOffsetOpen = true
-                    };
+                    new ArchiveFileStreamContext(this.FullName, null, null);
+                streamContext.EnableOffsetOpen = true;
                 IList<ArchiveFileInfo> files =
                     compressionEngine.GetFileInfo(streamContext, fileFilter);
                 for (int i = 0; i < files.Count; i++)

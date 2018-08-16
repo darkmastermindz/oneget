@@ -25,7 +25,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="BadQuerySyntaxException">the SQL syntax is invalid</exception>
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
-        /// The <paramref name="sqlFormat"/> parameter is formatted using <see cref="string.Format(string,object[])"/>.
+        /// The <paramref name="sqlFormat"/> parameter is formatted using <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// The View object should be <see cref="InstallerHandle.Close"/>d after use.
         /// It is best that the handle be closed manually as soon as it is no longer
@@ -42,14 +42,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             }
 
             string sql = (args == null || args.Length == 0 ? sqlFormat :
-                string.Format(CultureInfo.InvariantCulture, sqlFormat, args));
-            uint ret = RemotableNativeMethods.MsiDatabaseOpenView((int)Handle, sql, out int viewHandle);
+                String.Format(CultureInfo.InvariantCulture, sqlFormat, args));
+            int viewHandle;
+            uint ret = RemotableNativeMethods.MsiDatabaseOpenView((int) this.Handle, sql, out viewHandle);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
             }
 
-            return new View((IntPtr)viewHandle, sql, this);
+            return new View((IntPtr) viewHandle, sql, this);
         }
 
         /// <summary>
@@ -62,7 +63,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
         /// The <paramref name="sqlFormat"/> parameter is formatted using
-        /// <see cref="string.Format(string,object[])"/>.
+        /// <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// Win32 MSI APIs:
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msidatabaseopenview.asp">MsiDatabaseOpenView</a>,
@@ -75,10 +76,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sqlFormat");
             }
 
-            Execute(
+            this.Execute(
                 args == null || args.Length == 0 ?
-                    sqlFormat : string.Format(CultureInfo.InvariantCulture, sqlFormat, args),
-                (Record)null);
+                    sqlFormat : String.Format(CultureInfo.InvariantCulture, sqlFormat, args),
+                (Record) null);
         }
 
         /// <summary>
@@ -102,7 +103,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sql");
             }
 
-            using (View view = OpenView(sql))
+            using (View view = this.OpenView(sql))
             {
                 view.Execute(record);
             }
@@ -119,7 +120,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
         /// The <paramref name="sqlFormat"/> parameter is formatted using
-        /// <see cref="string.Format(string,object[])"/>.
+        /// <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// Multiple rows columns will be collapsed into a single one-dimensional list.
         /// </p><p>
@@ -136,10 +137,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sqlFormat");
             }
 
-            return ExecuteQuery(
+            return this.ExecuteQuery(
                 args == null || args.Length == 0 ?
-                    sqlFormat : string.Format(CultureInfo.InvariantCulture, sqlFormat, args),
-                (Record)null);
+                    sqlFormat : String.Format(CultureInfo.InvariantCulture, sqlFormat, args),
+                (Record) null);
         }
 
         /// <summary>
@@ -168,25 +169,18 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sql");
             }
 
-            using (View view = OpenView(sql))
+            using (View view = this.OpenView(sql))
             {
                 view.Execute(record);
                 IList results = new ArrayList();
                 int fieldCount = 0;
 
-                foreach (Record rec in view)
+                foreach (Record rec in view) using (rec)
                 {
-                    using (rec)
+                    if (fieldCount == 0) fieldCount = rec.FieldCount;
+                    for (int i = 1; i <= fieldCount; i++)
                     {
-                        if (fieldCount == 0)
-                        {
-                            fieldCount = rec.FieldCount;
-                        }
-
-                        for (int i = 1; i <= fieldCount; i++)
-                        {
-                            results.Add(rec[i]);
-                        }
+                        results.Add(rec[i]);
                     }
                 }
 
@@ -205,7 +199,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
         /// The <paramref name="sqlFormat"/> parameter is formatted using
-        /// <see cref="string.Format(string,object[])"/>.
+        /// <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// Multiple rows columns will be collapsed into a single one-dimensional list.
         /// </p><p>
@@ -222,10 +216,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sqlFormat");
             }
 
-            return ExecuteIntegerQuery(
+            return this.ExecuteIntegerQuery(
                 args == null || args.Length == 0 ?
-                    sqlFormat : string.Format(CultureInfo.InvariantCulture, sqlFormat, args),
-                (Record)null);
+                    sqlFormat : String.Format(CultureInfo.InvariantCulture, sqlFormat, args),
+                (Record) null);
         }
 
         /// <summary>
@@ -254,25 +248,18 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sql");
             }
 
-            using (View view = OpenView(sql))
+            using (View view = this.OpenView(sql))
             {
                 view.Execute(record);
                 IList<int> results = new List<int>();
                 int fieldCount = 0;
 
-                foreach (Record rec in view)
+                foreach (Record rec in view) using (rec)
                 {
-                    using (rec)
+                    if (fieldCount == 0) fieldCount = rec.FieldCount;
+                    for (int i = 1; i <= fieldCount; i++)
                     {
-                        if (fieldCount == 0)
-                        {
-                            fieldCount = rec.FieldCount;
-                        }
-
-                        for (int i = 1; i <= fieldCount; i++)
-                        {
-                            results.Add(rec.GetInteger(i));
-                        }
+                        results.Add(rec.GetInteger(i));
                     }
                 }
 
@@ -291,7 +278,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
         /// The <paramref name="sqlFormat"/> parameter is formatted using
-        /// <see cref="string.Format(string,object[])"/>.
+        /// <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// Multiple rows columns will be collapsed into a single on-dimensional list.
         /// </p><p>
@@ -307,10 +294,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sqlFormat");
             }
 
-            return ExecuteStringQuery(
+            return this.ExecuteStringQuery(
                 args == null || args.Length == 0 ?
-                    sqlFormat : string.Format(CultureInfo.InvariantCulture, sqlFormat, args),
-                (Record)null);
+                    sqlFormat : String.Format(CultureInfo.InvariantCulture, sqlFormat, args),
+                (Record) null);
         }
 
         /// <summary>
@@ -338,25 +325,18 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sql");
             }
 
-            using (View view = OpenView(sql))
+            using (View view = this.OpenView(sql))
             {
                 view.Execute(record);
                 IList<string> results = new List<string>();
                 int fieldCount = 0;
 
-                foreach (Record rec in view)
+                foreach (Record rec in view) using (rec)
                 {
-                    using (rec)
+                    if (fieldCount == 0) fieldCount = rec.FieldCount;
+                    for (int i = 1; i <= fieldCount; i++)
                     {
-                        if (fieldCount == 0)
-                        {
-                            fieldCount = rec.FieldCount;
-                        }
-
-                        for (int i = 1; i <= fieldCount; i++)
-                        {
-                            results.Add(rec.GetString(i));
-                        }
+                        results.Add(rec.GetString(i));
                     }
                 }
 
@@ -376,7 +356,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <exception cref="InvalidHandleException">the Database handle is invalid</exception>
         /// <remarks><p>
         /// The <paramref name="sqlFormat"/> parameter is formatted using
-        /// <see cref="string.Format(string,object[])"/>.
+        /// <see cref="String.Format(string,object[])"/>.
         /// </p><p>
         /// Win32 MSI APIs:
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msidatabaseopenview.asp">MsiDatabaseOpenView</a>,
@@ -391,10 +371,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sqlFormat");
             }
 
-            return ExecuteScalar(
+            return this.ExecuteScalar(
                 args == null || args.Length == 0 ?
-                    sqlFormat : string.Format(CultureInfo.InvariantCulture, sqlFormat, args),
-                (Record)null);
+                    sqlFormat : String.Format(CultureInfo.InvariantCulture, sqlFormat, args),
+                (Record) null);
         }
 
         /// <summary>
@@ -422,7 +402,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("sql");
             }
 
-            View view = OpenView(sql);
+            View view = this.OpenView(sql);
             Record rec = null;
             try
             {
@@ -430,17 +410,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 rec = view.Fetch();
                 if (rec == null)
                 {
-                    throw InstallerException.ExceptionFromReturnCode((uint)NativeMethods.Error.NO_MORE_ITEMS);
+                    throw InstallerException.ExceptionFromReturnCode((uint) NativeMethods.Error.NO_MORE_ITEMS);
                 }
                 return rec[1];
             }
             finally
             {
-                if (rec != null)
-                {
-                    rec.Close();
-                }
-
+                if (rec != null) rec.Close();
                 view.Close();
             }
         }

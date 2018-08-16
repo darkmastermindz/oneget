@@ -39,5 +39,6 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         /// </summary>
         public ZipException()
             : this(null, null) { }
+
     }
 }

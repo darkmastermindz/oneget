@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 using System.Text;
 using System.Xml.Linq;
 
@@ -6,6 +7,8 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
 {
     using System;
     using System.Linq;
+    using System.Management.Automation;
+    using System.Management.Automation.Runspaces;
     using System.Runtime.InteropServices;
 
     /// <summary>
@@ -15,7 +18,10 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
     {
         private static readonly Lazy<PlatformUtility> _platformUtility = new Lazy<PlatformUtility>(() => new PlatformUtility());
 
-        internal static PlatformUtility Instance => _platformUtility.Value;
+        internal static PlatformUtility Instance
+        {
+            get { return _platformUtility.Value; }
+        }
 
         private PlatformUtility()
         {
@@ -23,6 +29,7 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
 
         internal static IEnumerable<XElement> LoadFrom(string filename)
         {
+
             if (OSInformation.IsWindowsPowerShell)
             {
                 return WindowsPowerShellObject.LoadFrom(filename);
@@ -37,18 +44,19 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
     /// <summary>
     /// Applys to Windows inbox components: FullClr and Nano Server
     /// </summary>
-    internal class WindowsPowerShellObject
+    internal class WindowsPowerShellObject 
     {
-        private static readonly byte[] Utf = { 0xef, 0xbb, 0xbf };
+        private static readonly byte[] Utf = {0xef, 0xbb, 0xbf};
 
         internal static IEnumerable<XElement> LoadFrom(string filename)
         {
+
             if (!OSInformation.IsWindowsPowerShell)
             {
                 // apply it for FullClr or Nano server only
                 return Enumerable.Empty<XElement>();
             }
-            List<XElement> manifests = new List<XElement>();
+            var manifests = new List<XElement>();
 
             using (
                 DisposableModule dll = NativeMethods.LoadLibraryEx(filename, Unused.Nothing,
@@ -65,25 +73,25 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
                             (m1, resourceType, resourceId, language, unused) =>
                             {
                                 // find the specific resource
-                                Resource resource = NativeMethods.FindResourceEx(m1, resourceType, resourceId, language);
+                                var resource = NativeMethods.FindResourceEx(m1, resourceType, resourceId, language);
                                 if (!resource.IsInvalid)
                                 {
                                     // get a handle to the resource data
-                                    ResourceData resourceData = NativeMethods.LoadResource(m1, resource);
+                                    var resourceData = NativeMethods.LoadResource(m1, resource);
                                     if (!resourceData.IsInvalid)
                                     {
                                         // copy the resource text out of the resource data
                                         try
                                         {
-                                            int dataSize = NativeMethods.SizeofResource(m1, resource);
-                                            IntPtr dataPointer = NativeMethods.LockResource(resourceData);
+                                            var dataSize = NativeMethods.SizeofResource(m1, resource);
+                                            var dataPointer = NativeMethods.LockResource(resourceData);
 
                                             // make sure that the pointer and size are legit.
                                             if (dataSize > 0 && dataPointer != IntPtr.Zero)
                                             {
-                                                byte[] data = new byte[dataSize];
+                                                var data = new byte[dataSize];
                                                 Marshal.Copy(dataPointer, data, 0, data.Length);
-                                                bool bomPresent = (data.Length >= 3 && data[0] == Utf[0] &&
+                                                var bomPresent = (data.Length >= 3 && data[0] == Utf[0] &&
                                                                   data[1] == Utf[1] && data[2] == Utf[2]);
 
                                                 // create an XElement for the data returned.
@@ -110,6 +118,7 @@ namespace Microsoft.PackageManagement.Internal.Utility.Platform
             }
             return manifests;
         }
+     
     }
 
     /// <summary>

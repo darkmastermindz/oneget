@@ -39,7 +39,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
             lock (this)
             {
-                IList<ZipFileHeader> allHeaders = GetCentralDirectory(streamContext);
+                IList<ZipFileHeader> allHeaders = this.GetCentralDirectory(streamContext);
                 if (allHeaders == null)
                 {
                     throw new ZipException("Zip central directory not found.");
@@ -55,35 +55,40 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                     }
                 }
 
-                ResetProgressData();
+                this.ResetProgressData();
 
                 // Count the total number of files and bytes to be compressed.
-                totalFiles = headers.Count;
+                this.totalFiles = headers.Count;
                 foreach (ZipFileHeader header in headers)
                 {
+                    long compressedSize;
+                    long uncompressedSize;
+                    long localHeaderOffset;
+                    int archiveNumber;
+                    uint crc;
                     header.GetZip64Fields(
-                        out long compressedSize,
-                        out long uncompressedSize,
-                        out long localHeaderOffset,
-                        out int archiveNumber,
-                        out uint crc);
+                        out compressedSize,
+                        out uncompressedSize,
+                        out localHeaderOffset,
+                        out archiveNumber,
+                        out crc);
 
-                    totalFileBytes += uncompressedSize;
-                    if (archiveNumber >= totalArchives)
+                    this.totalFileBytes += uncompressedSize;
+                    if (archiveNumber >= this.totalArchives)
                     {
-                        totalArchives = (short)(archiveNumber + 1);
+                        this.totalArchives = (short)(archiveNumber + 1);
                     }
                 }
 
-                currentArchiveNumber = -1;
-                currentFileNumber = -1;
+                this.currentArchiveNumber = -1;
+                this.currentFileNumber = -1;
                 Stream archiveStream = null;
                 try
                 {
                     foreach (ZipFileHeader header in headers)
                     {
-                        currentFileNumber++;
-                        UnpackOneFile(streamContext, header, ref archiveStream);
+                        this.currentFileNumber++;
+                        this.UnpackOneFile(streamContext, header, ref archiveStream);
                     }
                 }
                 finally
@@ -91,9 +96,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                     if (archiveStream != null)
                     {
                         streamContext.CloseArchiveReadStream(
-                            0, string.Empty, archiveStream);
-                        currentArchiveNumber--;
-                        OnProgress(ArchiveProgressType.FinishArchive);
+                            0, String.Empty, archiveStream);
+                        this.currentArchiveNumber--;
+                        this.OnProgress(ArchiveProgressType.FinishArchive);
                     }
                 }
             }
@@ -111,48 +116,55 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
             Stream fileStream = null;
             try
             {
+                Func<Stream, Stream> compressionStreamCreator;
                 if (!ZipEngine.decompressionStreamCreators.TryGetValue(
-                    header.compressionMethod, out Func<Stream, Stream> compressionStreamCreator))
+                    header.compressionMethod, out compressionStreamCreator))
                 {
                     // Silently skip files of an unsupported compression method.
                     return;
                 }
-                header.GetZip64Fields(
-                    out long compressedSize,
-                    out long uncompressedSize,
-                    out long localHeaderOffset,
-                    out int archiveNumber,
-                    out uint crc);
 
-                if (currentArchiveNumber != archiveNumber + 1)
+                long compressedSize;
+                long uncompressedSize;
+                long localHeaderOffset;
+                int archiveNumber;
+                uint crc;
+                header.GetZip64Fields(
+                    out compressedSize,
+                    out uncompressedSize,
+                    out localHeaderOffset,
+                    out archiveNumber,
+                    out crc);
+
+                if (this.currentArchiveNumber != archiveNumber + 1)
                 {
                     if (archiveStream != null)
                     {
                         streamContext.CloseArchiveReadStream(
-                            currentArchiveNumber,
-                            string.Empty,
+                            this.currentArchiveNumber,
+                            String.Empty,
                             archiveStream);
                         archiveStream = null;
 
-                        OnProgress(ArchiveProgressType.FinishArchive);
-                        currentArchiveName = null;
+                        this.OnProgress(ArchiveProgressType.FinishArchive);
+                        this.currentArchiveName = null;
                     }
 
-                    currentArchiveNumber = (short)(archiveNumber + 1);
-                    currentArchiveBytesProcessed = 0;
-                    currentArchiveTotalBytes = 0;
+                    this.currentArchiveNumber = (short)(archiveNumber + 1);
+                    this.currentArchiveBytesProcessed = 0;
+                    this.currentArchiveTotalBytes = 0;
 
-                    archiveStream = OpenArchive(
-                        streamContext, currentArchiveNumber);
+                    archiveStream = this.OpenArchive(
+                        streamContext, this.currentArchiveNumber);
 
                     FileStream archiveFileStream = archiveStream as FileStream;
-                    currentArchiveName = (archiveFileStream != null ?
+                    this.currentArchiveName = (archiveFileStream != null ?
                         Path.GetFileName(archiveFileStream.Name) : null);
 
-                    currentArchiveTotalBytes = archiveStream.Length;
-                    currentArchiveNumber--;
-                    OnProgress(ArchiveProgressType.StartArchive);
-                    currentArchiveNumber++;
+                    this.currentArchiveTotalBytes = archiveStream.Length;
+                    this.currentArchiveNumber--;
+                    this.OnProgress(ArchiveProgressType.StartArchive);
+                    this.currentArchiveNumber++;
                 }
 
                 archiveStream.Seek(localHeaderOffset, SeekOrigin.Begin);
@@ -174,14 +186,14 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
                 if (fileStream != null)
                 {
-                    currentFileName = header.fileName;
-                    currentFileBytesProcessed = 0;
-                    currentFileTotalBytes = fileInfo.Length;
-                    currentArchiveNumber--;
-                    OnProgress(ArchiveProgressType.StartFile);
-                    currentArchiveNumber++;
+                    this.currentFileName = header.fileName;
+                    this.currentFileBytesProcessed = 0;
+                    this.currentFileTotalBytes = fileInfo.Length;
+                    this.currentArchiveNumber--;
+                    this.OnProgress(ArchiveProgressType.StartFile);
+                    this.currentArchiveNumber++;
 
-                    UnpackFileBytes(
+                    this.UnpackFileBytes(
                         streamContext,
                         fileInfo.FullName,
                         fileInfo.CompressedLength,
@@ -202,9 +214,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                         fileInfo.Attributes,
                         fileInfo.LastWriteTime);
 
-                    currentArchiveNumber--;
-                    OnProgress(ArchiveProgressType.FinishFile);
-                    currentArchiveNumber++;
+                    this.currentArchiveNumber--;
+                    this.OnProgress(ArchiveProgressType.FinishFile);
+                    this.currentArchiveNumber++;
                 }
             }
         }
@@ -219,17 +231,17 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         {
             path1 = path1.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             path2 = path2.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
-            return string.Compare(path1, path2, StringComparison.OrdinalIgnoreCase) == 0;
+            return String.Compare(path1, path2, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
         private Stream OpenArchive(IUnpackStreamContext streamContext, int archiveNumber)
         {
             Stream archiveStream = streamContext.OpenArchiveReadStream(
-                archiveNumber, string.Empty, this);
+                archiveNumber, String.Empty, this);
             if (archiveStream == null && archiveNumber != 0)
             {
                 archiveStream = streamContext.OpenArchiveReadStream(
-                    0, string.Empty, this);
+                    0, String.Empty, this);
             }
 
             if (archiveStream == null)
@@ -257,35 +269,34 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
             CrcStream crcStream = new CrcStream(fileStream);
 
             ConcatStream concatStream = new ConcatStream(
-                delegate (ConcatStream s)
+                delegate(ConcatStream s)
                 {
-                    currentArchiveBytesProcessed = s.Source.Position;
+                    this.currentArchiveBytesProcessed = s.Source.Position;
                     streamContext.CloseArchiveReadStream(
-                        currentArchiveNumber,
-                        string.Empty,
+                        this.currentArchiveNumber,
+                        String.Empty,
                         s.Source);
 
-                    currentArchiveNumber--;
-                    OnProgress(ArchiveProgressType.FinishArchive);
-                    currentArchiveNumber += 2;
-                    currentArchiveName = null;
-                    currentArchiveBytesProcessed = 0;
-                    currentArchiveTotalBytes = 0;
+                    this.currentArchiveNumber--;
+                    this.OnProgress(ArchiveProgressType.FinishArchive);
+                    this.currentArchiveNumber += 2;
+                    this.currentArchiveName = null;
+                    this.currentArchiveBytesProcessed = 0;
+                    this.currentArchiveTotalBytes = 0;
 
-                    s.Source = OpenArchive(streamContext, currentArchiveNumber);
+                    s.Source = this.OpenArchive(streamContext, this.currentArchiveNumber);
 
                     FileStream archiveFileStream = s.Source as FileStream;
-                    currentArchiveName = (archiveFileStream != null ?
+                    this.currentArchiveName = (archiveFileStream != null ?
                         Path.GetFileName(archiveFileStream.Name) : null);
 
-                    currentArchiveTotalBytes = s.Source.Length;
-                    currentArchiveNumber--;
-                    OnProgress(ArchiveProgressType.StartArchive);
-                    currentArchiveNumber++;
-                })
-            {
-                Source = archiveStream
-            };
+                    this.currentArchiveTotalBytes = s.Source.Length;
+                    this.currentArchiveNumber--;
+                    this.OnProgress(ArchiveProgressType.StartArchive);
+                    this.currentArchiveNumber++;
+                });
+
+            concatStream.Source = archiveStream;
             concatStream.SetLength(compressedSize);
 
             Stream decompressionStream = compressionStreamCreator(concatStream);
@@ -302,15 +313,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
                     crcStream.Write(buf, 0, count);
                     bytesRemaining -= count;
 
-                    fileBytesProcessed += count;
-                    currentFileBytesProcessed += count;
-                    currentArchiveBytesProcessed = concatStream.Source.Position;
+                    this.fileBytesProcessed += count;
+                    this.currentFileBytesProcessed += count;
+                    this.currentArchiveBytesProcessed = concatStream.Source.Position;
 
                     if (++counter % 16 == 0) // Report every 64K
                     {
-                        currentArchiveNumber--;
-                        OnProgress(ArchiveProgressType.PartialFile);
-                        currentArchiveNumber++;
+                        this.currentArchiveNumber--;
+                        this.OnProgress(ArchiveProgressType.PartialFile);
+                        this.currentArchiveNumber++;
                     }
                 }
             }
@@ -328,3 +339,4 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         }
     }
 }
+

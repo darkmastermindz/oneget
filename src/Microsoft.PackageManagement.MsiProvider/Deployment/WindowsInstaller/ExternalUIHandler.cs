@@ -41,74 +41,80 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 
     internal class ExternalUIProxy
     {
-        private readonly ExternalUIHandler handler;
+        private ExternalUIHandler handler;
 
         internal ExternalUIProxy(ExternalUIHandler handler)
         {
             this.handler = handler;
         }
 
-        public ExternalUIHandler Handler => handler;
+        public ExternalUIHandler Handler
+        {
+            get { return this.handler; }
+        }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public int ProxyHandler(IntPtr contextPtr, int messageType, [MarshalAs(UnmanagedType.LPWStr)] string message)
         {
             try
             {
-                int msgType = messageType & 0x7F000000;
-                int buttons = messageType & 0x0000000F;
-                int icon = messageType & 0x000000F0;
+                int msgType   = messageType & 0x7F000000;
+                int buttons   = messageType & 0x0000000F;
+                int icon      = messageType & 0x000000F0;
                 int defButton = messageType & 0x00000F00;
 
-                return (int)handler(
-                        (InstallMessage)msgType,
+                return (int) this.handler(
+                        (InstallMessage) msgType,
                         message,
-                        (MessageButtons)buttons,
-                        (MessageIcon)icon,
-                        (MessageDefaultButton)defButton);
+                        (MessageButtons) buttons,
+                        (MessageIcon) icon,
+                        (MessageDefaultButton) defButton);
             }
             catch
             {
-                return (int)MessageResult.Error;
+                return (int) MessageResult.Error;
             }
         }
     }
 
     internal class ExternalUIRecordProxy
     {
-        private readonly ExternalUIRecordHandler handler;
+        private ExternalUIRecordHandler handler;
 
         internal ExternalUIRecordProxy(ExternalUIRecordHandler handler)
         {
             this.handler = handler;
         }
 
-        public ExternalUIRecordHandler Handler => handler;
+        public ExternalUIRecordHandler Handler
+        {
+            get { return this.handler; }
+        }
 
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         public int ProxyHandler(IntPtr contextPtr, int messageType, int recordHandle)
         {
             try
             {
-                int msgType = messageType & 0x7F000000;
-                int buttons = messageType & 0x0000000F;
-                int icon = messageType & 0x000000F0;
+                int msgType   = messageType & 0x7F000000;
+                int buttons   = messageType & 0x0000000F;
+                int icon      = messageType & 0x000000F0;
                 int defButton = messageType & 0x00000F00;
 
-                Record msgRec = (recordHandle != 0 ? Record.FromHandle((IntPtr)recordHandle, false) : null);
+                Record msgRec = (recordHandle != 0 ? Record.FromHandle((IntPtr) recordHandle, false) : null);
                 using (msgRec)
                 {
-                    return (int)handler(
-                        (InstallMessage)msgType,
+                    return (int) this.handler(
+                        (InstallMessage) msgType,
                         msgRec,
-                        (MessageButtons)buttons,
-                        (MessageIcon)icon,
-                        (MessageDefaultButton)defButton);
+                        (MessageButtons) buttons,
+                        (MessageIcon) icon,
+                        (MessageDefaultButton) defButton);
                 }
             }
             catch
             {
-                return (int)MessageResult.Error;
+                return (int) MessageResult.Error;
             }
         }
     }
@@ -154,11 +160,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 nativeHandler = new ExternalUIProxy(uiHandler).ProxyHandler;
                 Installer.externalUIHandlers.Add(nativeHandler);
             }
-            NativeExternalUIHandler oldNativeHandler = NativeMethods.MsiSetExternalUI(nativeHandler, (uint)messageFilter, IntPtr.Zero);
+            NativeExternalUIHandler oldNativeHandler = NativeMethods.MsiSetExternalUI(nativeHandler, (uint) messageFilter, IntPtr.Zero);
             if (oldNativeHandler != null && oldNativeHandler.Target is ExternalUIProxy)
             {
                 Installer.externalUIHandlers.Remove(oldNativeHandler);
-                return ((ExternalUIProxy)oldNativeHandler.Target).Handler;
+                return ((ExternalUIProxy) oldNativeHandler.Target).Handler;
             }
             else
             {
@@ -203,7 +209,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 nativeHandler = new ExternalUIRecordProxy(uiHandler).ProxyHandler;
                 Installer.externalUIHandlers.Add(nativeHandler);
             }
-            uint ret = NativeMethods.MsiSetExternalUIRecord(nativeHandler, (uint)messageFilter, IntPtr.Zero, out NativeExternalUIRecordHandler oldNativeHandler);
+            NativeExternalUIRecordHandler oldNativeHandler;
+            uint ret = NativeMethods.MsiSetExternalUIRecord(nativeHandler, (uint) messageFilter, IntPtr.Zero, out oldNativeHandler);
             if (ret != 0)
             {
                 Installer.externalUIHandlers.Remove(nativeHandler);
@@ -213,7 +220,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             if (oldNativeHandler != null && oldNativeHandler.Target is ExternalUIRecordProxy)
             {
                 Installer.externalUIHandlers.Remove(oldNativeHandler);
-                return ((ExternalUIRecordProxy)oldNativeHandler.Target).Handler;
+                return ((ExternalUIRecordProxy) oldNativeHandler.Target).Handler;
             }
             else
             {

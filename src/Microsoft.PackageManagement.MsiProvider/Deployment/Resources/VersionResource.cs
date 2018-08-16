@@ -48,7 +48,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         public VersionResource(string name, int locale, byte[] data)
             : base(ResourceType.Version, name, locale, data)
         {
-            RefreshVersionInfo(data);
+            this.RefreshVersionInfo(data);
         }
 
         /// <summary>
@@ -58,11 +58,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         {
             get
             {
-                if (dirty)
+                if (this.dirty)
                 {
-                    rawVersionInfo.Data = (byte[])rawFileVersionInfo;
-                    base.Data = (byte[])rawVersionInfo;
-                    dirty = false;
+                    this.rawVersionInfo.Data = (byte[]) this.rawFileVersionInfo;
+                    base.Data = (byte[]) this.rawVersionInfo;
+                    this.dirty = false;
                 }
 
                 return base.Data;
@@ -70,8 +70,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
             set
             {
                 base.Data = value;
-                RefreshVersionInfo(value);
-                dirty = false;
+                this.RefreshVersionInfo(value);
+                this.dirty = false;
             }
         }
 
@@ -79,13 +79,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         {
             if (refreshData == null)
             {
-                rawVersionInfo = new VersionInfo("VS_VERSION_INFO");
-                rawFileVersionInfo = new FixedFileVersionInfo();
+                this.rawVersionInfo = new VersionInfo("VS_VERSION_INFO");
+                this.rawFileVersionInfo = new FixedFileVersionInfo();
             }
             else
             {
-                rawVersionInfo = (VersionInfo)refreshData;
-                rawFileVersionInfo = (FixedFileVersionInfo)rawVersionInfo.Data;
+                this.rawVersionInfo = (VersionInfo) refreshData;
+                this.rawFileVersionInfo = (FixedFileVersionInfo) this.rawVersionInfo.Data;
             }
         }
 
@@ -95,11 +95,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public Version FileVersion
         {
-            get => rawFileVersionInfo.FileVersion;
+            get
+            {
+                return this.rawFileVersionInfo.FileVersion;
+            }
             set
             {
-                rawFileVersionInfo.FileVersion = value;
-                dirty = true;
+                this.rawFileVersionInfo.FileVersion = value;
+                this.dirty = true;
             }
         }
 
@@ -109,11 +112,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public Version ProductVersion
         {
-            get => rawFileVersionInfo.ProductVersion;
+            get
+            {
+                return this.rawFileVersionInfo.ProductVersion;
+            }
             set
             {
-                rawFileVersionInfo.ProductVersion = value;
-                dirty = true;
+                this.rawFileVersionInfo.ProductVersion = value;
+                this.dirty = true;
             }
         }
 
@@ -123,13 +129,16 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public VersionBuildTypes BuildTypes
         {
-            get => rawFileVersionInfo.FileFlags &
-                    rawFileVersionInfo.FileFlagsMask;
+            get
+            {
+                return this.rawFileVersionInfo.FileFlags &
+                    this.rawFileVersionInfo.FileFlagsMask;
+            }
             set
             {
-                rawFileVersionInfo.FileFlags = value;
-                rawFileVersionInfo.FileFlagsMask = value;
-                dirty = true;
+                this.rawFileVersionInfo.FileFlags = value;
+                this.rawFileVersionInfo.FileFlagsMask = value;
+                this.dirty = true;
             }
         }
 
@@ -139,11 +148,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public VersionFileType FileType
         {
-            get => rawFileVersionInfo.FileType;
+            get
+            {
+                return this.rawFileVersionInfo.FileType;
+            }
             set
             {
-                rawFileVersionInfo.FileType = value;
-                dirty = true;
+                this.rawFileVersionInfo.FileType = value;
+                this.dirty = true;
             }
         }
 
@@ -153,11 +165,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public VersionFileSubtype FileSubtype
         {
-            get => rawFileVersionInfo.FileSubtype;
+            get
+            {
+                return this.rawFileVersionInfo.FileSubtype;
+            }
             set
             {
-                rawFileVersionInfo.FileSubtype = value;
-                dirty = true;
+                this.rawFileVersionInfo.FileSubtype = value;
+                this.dirty = true;
             }
         }
 
@@ -167,11 +182,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public DateTime Timestamp
         {
-            get => rawFileVersionInfo.Timestamp;
+            get
+            {
+                return this.rawFileVersionInfo.Timestamp;
+            }
             set
             {
-                rawFileVersionInfo.Timestamp = value;
-                dirty = true;
+                this.rawFileVersionInfo.Timestamp = value;
+                this.dirty = true;
             }
         }
 
@@ -185,12 +203,12 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         {
             get
             {
-                VersionInfo svi = rawVersionInfo["StringFileInfo"];
+                VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
                 if (svi != null)
                 {
                     foreach (VersionInfo strings in svi)
                     {
-                        int stringsLocale = ushort.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                        int stringsLocale = UInt16.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                         if (stringsLocale == locale)
                         {
                             return new VersionStringTable(this, strings);
@@ -209,15 +227,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public VersionStringTable Add(int locale)
         {
-            VersionInfo svi = rawVersionInfo["StringFileInfo"];
+            VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
             if (svi == null)
             {
                 svi = new VersionInfo("StringFileInfo");
-                rawVersionInfo.Add(svi);
+                this.rawVersionInfo.Add(svi);
             }
             foreach (VersionInfo strings in svi)
             {
-                int stringsLocale = ushort.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                int stringsLocale = UInt16.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                 if (stringsLocale == locale)
                 {
                     return new VersionStringTable(this, strings);
@@ -225,34 +243,28 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
             }
 
             VersionInfo newStrings = new VersionInfo(
-                ((ushort)locale).ToString("x4", CultureInfo.InvariantCulture) + ((ushort)1200).ToString("x4", CultureInfo.InvariantCulture));
+                ((ushort) locale).ToString("x4", CultureInfo.InvariantCulture) + ((ushort) 1200).ToString("x4", CultureInfo.InvariantCulture));
             svi.Add(newStrings);
-            dirty = true;
+            this.dirty = true;
 
-            VersionInfo vvi = rawVersionInfo["VarFileInfo"];
+            VersionInfo vvi = this.rawVersionInfo["VarFileInfo"];
             if (vvi == null)
             {
-                vvi = new VersionInfo("VarFileInfo")
-                {
-                    new VersionInfo("Translation")
-                };
-                rawVersionInfo.Add(vvi);
+                vvi = new VersionInfo("VarFileInfo");
+                vvi.Add(new VersionInfo("Translation"));
+                this.rawVersionInfo.Add(vvi);
             }
             VersionInfo tVerInfo = vvi["Translation"];
             if (tVerInfo != null)
             {
                 byte[] oldValue = tVerInfo.Data;
-                if (oldValue == null)
-                {
-                    oldValue = new byte[0];
-                }
-
+                if (oldValue == null) oldValue = new byte[0];
                 tVerInfo.Data = new byte[oldValue.Length + 4];
                 Array.Copy(oldValue, tVerInfo.Data, oldValue.Length);
                 using (BinaryWriter bw = new BinaryWriter(new MemoryStream(tVerInfo.Data, oldValue.Length, 4, true)))
                 {
-                    bw.Write((ushort)locale);
-                    bw.Write((ushort)1200);
+                    bw.Write((ushort) locale);
+                    bw.Write((ushort) 1200);
                 }
             }
 
@@ -266,22 +278,23 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void Remove(int locale)
         {
-            VersionInfo svi = rawVersionInfo["StringFileInfo"];
+            VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
             if (svi != null)
             {
                 foreach (VersionInfo strings in svi)
                 {
-                    int stringsLocale = ushort.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                    int stringsLocale = UInt16.Parse(strings.Key.Substring(0, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                     if (stringsLocale == locale)
                     {
                         svi.Remove(strings);
-                        dirty = true;
+                        this.dirty = true;
                         break;
                     }
                 }
+
             }
 
-            VersionInfo vvi = rawVersionInfo["VarFileInfo"];
+            VersionInfo vvi = this.rawVersionInfo["VarFileInfo"];
             if (vvi != null)
             {
                 VersionInfo tVerInfo = vvi["Translation"];
@@ -299,8 +312,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
                                 ushort cp = br.ReadUInt16();
                                 if (tLocale != locale)
                                 {
-                                    bw.Write(tLocale);
-                                    bw.Write(cp);
+                                    bw.Write((ushort) tLocale);
+                                    bw.Write((ushort) cp);
                                     j++;
                                 }
                             }
@@ -330,7 +343,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         {
             get
             {
-                VersionInfo svi = rawVersionInfo["StringFileInfo"];
+                VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
                 return svi != null ? svi.Count : 0;
             }
         }
@@ -340,15 +353,21 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// </summary>
         public void Clear()
         {
-            VersionInfo svi = rawVersionInfo["StringFileInfo"];
+            VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
             if (svi != null)
             {
                 svi.Clear();
-                dirty = true;
+                this.dirty = true;
             }
         }
 
-        bool ICollection<VersionStringTable>.IsReadOnly => false;
+        bool ICollection<VersionStringTable>.IsReadOnly
+        {
+            get
+            {
+                return false;
+            }
+        }
 
         void ICollection<VersionStringTable>.Add(VersionStringTable item)
         {
@@ -373,11 +392,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
         public void CopyTo(VersionStringTable[] array, int arrayIndex)
         {
-            if (array == null)
-            {
+            if (array == null) {
                 throw new ArgumentNullException("array");
             }
-            VersionInfo svi = rawVersionInfo["StringFileInfo"];
+            VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
             if (svi != null)
             {
                 foreach (VersionInfo strings in svi)
@@ -393,7 +411,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <returns>An enumerator that returns <see cref="VersionStringTable"/> objects.</returns>
         public IEnumerator<VersionStringTable> GetEnumerator()
         {
-            VersionInfo svi = rawVersionInfo["StringFileInfo"];
+            VersionInfo svi = this.rawVersionInfo["StringFileInfo"];
             if (svi != null)
             {
                 foreach (VersionInfo strings in svi)
@@ -409,7 +427,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <returns>An enumerator that returns <see cref="VersionStringTable"/> objects.</returns>
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return GetEnumerator();
+            return this.GetEnumerator();
         }
     }
 }

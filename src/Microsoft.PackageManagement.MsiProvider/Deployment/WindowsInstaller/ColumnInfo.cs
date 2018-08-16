@@ -21,12 +21,12 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     /// <remarks>Once created, a ColumnInfo object is immutable.</remarks>
     internal class ColumnInfo
     {
-        private readonly string name;
-        private readonly Type type;
-        private readonly int size;
-        private readonly bool isRequired;
-        private readonly bool isTemporary;
-        private readonly bool isLocalizable;
+        private string name;
+        private Type type;
+        private int size;
+        private bool isRequired;
+        private bool isTemporary;
+        private bool isLocalizable;
 
         /// <summary>
         /// Creates a new ColumnInfo object from a column definition.
@@ -35,7 +35,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <param name="columnDefinition">column definition string</param>
         /// <seealso cref="ColumnDefinitionString"/>
         public ColumnInfo(string name, string columnDefinition)
-            : this(name, typeof(string), 0, false, false, false)
+            : this(name, typeof(String), 0, false, false, false)
         {
             if (name == null)
             {
@@ -47,42 +47,30 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("columnDefinition");
             }
 
-            switch (char.ToLower(columnDefinition[0], CultureInfo.InvariantCulture))
+            switch (Char.ToLower(columnDefinition[0], CultureInfo.InvariantCulture))
             {
-                case 'i':
-                    type = typeof(int);
+                case 'i': this.type = typeof(Int32);
                     break;
-
-                case 'j':
-                    type = typeof(int); isTemporary = true;
+                case 'j': this.type = typeof(Int32); this.isTemporary = true;
                     break;
-
-                case 'g':
-                    type = typeof(string); isTemporary = true;
+                case 'g': this.type = typeof(String); this.isTemporary = true;
                     break;
-
-                case 'l':
-                    type = typeof(string); isLocalizable = true;
+                case 'l': this.type = typeof(String); this.isLocalizable = true;
                     break;
-
-                case 's':
-                    type = typeof(string);
+                case 's': this.type = typeof(String);
                     break;
-
-                case 'v':
-                    type = typeof(Stream);
+                case 'v': this.type = typeof(Stream);
                     break;
-
                 default: throw new InstallerException();
             }
 
-            isRequired = char.IsLower(columnDefinition[0]);
-            size = int.Parse(
+            this.isRequired = Char.IsLower(columnDefinition[0]);
+            this.size = Int32.Parse(
                 columnDefinition.Substring(1),
                 CultureInfo.InvariantCulture.NumberFormat);
-            if (type == typeof(int) && size <= 2)
+            if (this.type == typeof(Int32) && this.size <= 2)
             {
-                type = typeof(short);
+                this.type = typeof(Int16);
             }
         }
 
@@ -116,17 +104,22 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// is localizable; ignored for other column types</param>
         public ColumnInfo(string name, Type type, int size, bool isRequired, bool isTemporary, bool isLocalizable)
         {
-            if (type == typeof(int))
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+
+            if (type == typeof(Int32))
             {
                 size = 4;
                 isLocalizable = false;
             }
-            else if (type == typeof(short))
+            else if (type == typeof(Int16))
             {
                 size = 2;
                 isLocalizable = false;
             }
-            else if (type == typeof(string))
+            else if (type == typeof(String))
             {
             }
             else if (type == typeof(Stream))
@@ -138,7 +131,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentOutOfRangeException("type");
             }
 
-            this.name = name ?? throw new ArgumentNullException("name");
+            this.name = name;
             this.type = type;
             this.size = size;
             this.isRequired = isRequired;
@@ -150,14 +143,20 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// Gets the name of the column.
         /// </summary>
         /// <value>name of the column</value>
-        public string Name => name;
+        public string Name
+        {
+            get { return this.name; }
+        }
 
         /// <summary>
         /// Gets the type of the column as a System.Type.  This is one of the following: Int16, Int32, String, or Stream
         /// </summary>
         /// <value>type of the column</value>
         [SuppressMessage("Microsoft.Naming", "CA1721:PropertyNamesShouldNotMatchGetMethods")]
-        public Type Type => type;
+        public Type Type
+        {
+            get { return this.type; }
+        }
 
         /// <summary>
         /// Gets the type of the column as an integer that can be cast to a System.Data.DbType.  This is one of the following: Int16, Int32, String, or Binary
@@ -168,22 +167,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                if (type == typeof(short))
-                {
-                    return 10;
-                }
-                else if (type == typeof(int))
-                {
-                    return 11;
-                }
-                else if (type == typeof(Stream))
-                {
-                    return 1;
-                }
-                else
-                {
-                    return 16;
-                }
+                if (this.type == typeof(Int16)) return 10;
+                else if (this.type == typeof(Int32)) return 11;
+                else if (this.type == typeof(Stream)) return 1;
+                else return 16;
             }
         }
 
@@ -193,14 +180,20 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <value>The size of integer columns this is either 2 or 4.  For string columns this is the maximum
         /// recommended length of the string, or 0 for unlimited length.  For stream columns, 0 is returned.</value>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public int Size => size;
+        public int Size
+        {
+            get { return this.size; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether the column must be non-null when inserting a record.
         /// </summary>
         /// <value>required status of the column</value>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsRequired => isRequired;
+        public bool IsRequired
+        {
+            get { return this.isRequired; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether the column is temporary. Temporary columns are not persisted
@@ -208,14 +201,20 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </summary>
         /// <value>temporary status of the column</value>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsTemporary => isTemporary;
+        public bool IsTemporary
+        {
+            get { return this.isTemporary; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether the column is a string column that is localizable.
         /// </summary>
         /// <value>localizable status of the column</value>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsLocalizable => isLocalizable;
+        public bool IsLocalizable
+        {
+            get { return this.isLocalizable; }
+        }
 
         /// <summary>
         /// Gets an SQL fragment that can be used to create this column within a CREATE TABLE statement.
@@ -236,39 +235,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             get
             {
                 StringBuilder s = new StringBuilder();
-                s.AppendFormat("`{0}` ", name);
-                if (type == typeof(short))
-                {
-                    s.Append("SHORT");
-                }
-                else if (type == typeof(int))
-                {
-                    s.Append("LONG");
-                }
-                else if (type == typeof(string))
-                {
-                    s.AppendFormat("CHAR({0})", size);
-                }
-                else
-                {
-                    s.Append("OBJECT");
-                }
-
-                if (isRequired)
-                {
-                    s.Append(" NOT NULL");
-                }
-
-                if (isTemporary)
-                {
-                    s.Append(" TEMPORARY");
-                }
-
-                if (isLocalizable)
-                {
-                    s.Append(" LOCALIZABLE");
-                }
-
+                s.AppendFormat("`{0}` ", this.name);
+                if (this.type == typeof(Int16)) s.Append("SHORT");
+                else if (this.type == typeof(Int32)) s.Append("LONG");
+                else if (this.type == typeof(String)) s.AppendFormat("CHAR({0})", this.size);
+                else s.Append("OBJECT");
+                if (this.isRequired) s.Append(" NOT NULL");
+                if (this.isTemporary) s.Append(" TEMPORARY");
+                if (this.isLocalizable) s.Append(" LOCALIZABLE");
                 return s.ToString();
             }
         }
@@ -302,23 +276,23 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             get
             {
                 char t;
-                if (type == typeof(short) || type == typeof(int))
+                if (this.type == typeof(Int16) || this.type == typeof(Int32))
                 {
-                    t = (isTemporary ? 'j' : 'i');
+                    t = (this.isTemporary ? 'j' : 'i');
                 }
-                else if (type == typeof(string))
+                else if (this.type == typeof(String))
                 {
-                    t = (isTemporary ? 'g' : isLocalizable ? 'l' : 's');
+                    t = (this.isTemporary ? 'g' : this.isLocalizable ? 'l' : 's');
                 }
                 else
                 {
                     t = 'v';
                 }
-                return string.Format(
+                return String.Format(
                     CultureInfo.InvariantCulture,
                     "{0}{1}",
-                    (isRequired ? t : char.ToUpper(t, CultureInfo.InvariantCulture)),
-                    size);
+                    (this.isRequired ? t : Char.ToUpper(t, CultureInfo.InvariantCulture)),
+                    this.size);
             }
         }
 
@@ -328,7 +302,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <returns>Name of the column.</returns>
         public override string ToString()
         {
-            return Name;
+            return this.Name;
         }
     }
 }

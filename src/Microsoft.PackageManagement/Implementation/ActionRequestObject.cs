@@ -12,15 +12,12 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PackageManagement.Internal.Implementation
-{
-    using Internal.Api;
+namespace Microsoft.PackageManagement.Internal.Implementation {
     using System;
+    using Internal.Api;
 
-    public class ActionRequestObject : RequestObject
-    {
-        public ActionRequestObject(ProviderBase provider, IHostApi hostApi, Action<RequestObject> action) : base(provider, hostApi, action)
-        {
+    public class ActionRequestObject : RequestObject {
+        public ActionRequestObject(ProviderBase provider, IHostApi hostApi, Action<RequestObject> action) : base(provider, hostApi, action) {
             InvokeImpl();
         }
     }

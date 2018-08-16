@@ -38,11 +38,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             for (uint i = 0; true; i++)
             {
                 uint ret = NativeMethods.MsiEnumRelatedProducts(upgradeCode, 0, i, buf);
-                if (ret == (uint)NativeMethods.Error.NO_MORE_ITEMS)
-                {
-                    break;
-                }
-
+                if (ret == (uint) NativeMethods.Error.NO_MORE_ITEMS) break;
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
@@ -59,7 +55,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// Win32 MSI API:
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msienumproducts.asp">MsiEnumProducts</a>,
         /// </p></remarks>
-        public static IEnumerable<ProductInstallation> AllProducts => GetProducts(null, null, UserContexts.All);
+        public static IEnumerable<ProductInstallation> AllProducts
+        {
+            get
+            {
+                return GetProducts(null, null, UserContexts.All);
+            }
+        }
 
         /// <summary>
         /// Enumerates product installations based on certain criteria.
@@ -86,22 +88,23 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             string productCode, string userSid, UserContexts context)
         {
             StringBuilder buf = new StringBuilder(40);
+            UserContexts targetContext;
             StringBuilder targetSidBuf = new StringBuilder(40);
             for (uint i = 0; ; i++)
             {
-                uint targetSidBufSize = (uint)targetSidBuf.Capacity;
+                uint targetSidBufSize = (uint) targetSidBuf.Capacity;
                 uint ret = NativeMethods.MsiEnumProductsEx(
                     productCode,
                     userSid,
                     context,
                     i,
                     buf,
-                    out UserContexts targetContext,
+                    out targetContext,
                     targetSidBuf,
                     ref targetSidBufSize);
-                if (ret == (uint)NativeMethods.Error.MORE_DATA)
+                if (ret == (uint) NativeMethods.Error.MORE_DATA)
                 {
-                    targetSidBuf.Capacity = (int)++targetSidBufSize;
+                    targetSidBuf.Capacity = (int) ++targetSidBufSize;
                     ret = NativeMethods.MsiEnumProductsEx(
                         productCode,
                         userSid,
@@ -113,7 +116,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                         ref targetSidBufSize);
                 }
 
-                if (ret == (uint)NativeMethods.Error.NO_MORE_ITEMS)
+                if (ret == (uint) NativeMethods.Error.NO_MORE_ITEMS)
                 {
                     break;
                 }
@@ -130,7 +133,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             }
         }
 
-        private readonly IDictionary<string, string> properties;
+        private IDictionary<string, string> properties;
 
         /// <summary>
         /// Creates a new object for accessing information about a product installation on the current system.
@@ -188,14 +191,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 StringBuilder buf = new StringBuilder(256);
                 for (uint i = 0; ; i++)
                 {
-                    uint ret = NativeMethods.MsiEnumFeatures(ProductCode, i, buf, null);
+                    uint ret = NativeMethods.MsiEnumFeatures(this.ProductCode, i, buf, null);
 
                     if (ret != 0)
                     {
                         break;
                     }
 
-                    yield return new FeatureInstallation(buf.ToString(), ProductCode);
+                    yield return new FeatureInstallation(buf.ToString(), this.ProductCode);
                 }
             }
         }
@@ -203,18 +206,33 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the ProductCode (GUID) of the product.
         /// </summary>
-        public string ProductCode => InstallationCode;
+        public string ProductCode
+        {
+            get { return this.InstallationCode; }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this product is installed on the current system.
         /// </summary>
-        public override bool IsInstalled => (State == InstallState.Default);
+        public override bool IsInstalled
+        {
+            get
+            {
+                return (this.State == InstallState.Default);
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether this product is advertised on the current system.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool IsAdvertised => (State == InstallState.Advertised);
+        public bool IsAdvertised
+        {
+            get
+            {
+                return (this.State == InstallState.Advertised);
+            }
+        }
 
         /// <summary>
         /// Checks whether the product is installed with elevated privileges. An application is called
@@ -230,7 +248,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                uint ret = NativeMethods.MsiIsProductElevated(ProductCode, out bool isElevated);
+                bool isElevated;
+                uint ret = NativeMethods.MsiIsProductElevated(this.ProductCode, out isElevated);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
@@ -242,20 +261,26 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the source list of this product installation.
         /// </summary>
-        internal override SourceList SourceList => properties == null ? base.SourceList : null;
+        internal override SourceList SourceList
+        {
+            get
+            {
+                return this.properties == null ? base.SourceList : null;
+            }
+        }
 
         internal InstallState State
         {
             get
             {
-                if (properties != null)
+                if (this.properties != null)
                 {
                     return InstallState.Unknown;
                 }
                 else
                 {
-                    int installState = NativeMethods.MsiQueryProductState(ProductCode);
-                    return (InstallState)installState;
+                    int installState = NativeMethods.MsiQueryProductState(this.ProductCode);
+                    return (InstallState) installState;
                 }
             }
         }
@@ -273,13 +298,25 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// The support link.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string HelpLink => this["HelpLink"];
+        public string HelpLink
+        {
+            get
+            {
+                return this["HelpLink"];
+            }
+        }
 
         /// <summary>
         /// The support telephone.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string HelpTelephone => this["HelpTelephone"];
+        public string HelpTelephone
+        {
+            get
+            {
+                return this["HelpTelephone"];
+            }
+        }
 
         /// <summary>
         /// Date and time the product was installed.
@@ -304,29 +341,59 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// The installed product name.
         /// </summary>
-        public string ProductName => this["InstalledProductName"];
+        public string ProductName
+        {
+            get
+            {
+                return this["InstalledProductName"];
+            }
+        }
 
         /// <summary>
         /// The installation location.
         /// </summary>
-        public string InstallLocation => this["InstallLocation"];
+        public string InstallLocation
+        {
+            get
+            {
+                return this["InstallLocation"];
+            }
+        }
 
         /// <summary>
         /// The installation source.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811: Avoid uncalled private coded", Justification = "Common code for extensions.")]
-        public string InstallSource => this["InstallSource"];
+        public string InstallSource
+        {
+            get
+            {
+                return this["InstallSource"];
+            }
+        }
 
         /// <summary>
         /// The local cached package.
         /// </summary>
-        public string LocalPackage => this["LocalPackage"];
+        public string LocalPackage
+        {
+            get
+            {
+                return this["LocalPackage"];
+            }
+        }
 
         /// <summary>
         /// The publisher.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string Publisher => this["Publisher"];
+        public string Publisher
+        {
+            get
+            {
+                return this["Publisher"];
+            }
+        }
 
         /// <summary>
         /// URL about information.
@@ -392,50 +459,98 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/productid.asp">ProductID</a>
         /// </p></remarks>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string ProductId => this["ProductID"];
+        public string ProductId
+        {
+            get
+            {
+                return this["ProductID"];
+            }
+        }
 
         /// <summary>
         /// The company that is registered to use the product.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string RegCompany => this["RegCompany"];
+        public string RegCompany
+        {
+            get
+            {
+                return this["RegCompany"];
+            }
+        }
 
         /// <summary>
         /// The owner who is registered to use the product.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string RegOwner => this["RegOwner"];
+        public string RegOwner
+        {
+            get
+            {
+                return this["RegOwner"];
+            }
+        }
 
         /// <summary>
         /// Transforms.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedTransforms => this["Transforms"];
+        public string AdvertisedTransforms
+        {
+            get
+            {
+                return this["Transforms"];
+            }
+        }
 
         /// <summary>
         /// Product language.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedLanguage => this["Language"];
+        public string AdvertisedLanguage
+        {
+            get
+            {
+                return this["Language"];
+            }
+        }
 
         /// <summary>
         /// Human readable product name.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedProductName => this["ProductName"];
+        public string AdvertisedProductName
+        {
+            get
+            {
+                return this["ProductName"];
+            }
+        }
 
         /// <summary>
         /// True if the product is advertised per-machine;
         /// false if it is per-user or not advertised.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool AdvertisedPerMachine => this["AssignmentType"] == "1";
+        public bool AdvertisedPerMachine
+        {
+            get
+            {
+                return this["AssignmentType"] == "1";
+            }
+        }
 
         /// <summary>
         /// Identifier of the package that a product is installed from.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedPackageCode => this["PackageCode"];
+        public string AdvertisedPackageCode
+        {
+            get
+            {
+                return this["PackageCode"];
+            }
+        }
 
         /// <summary>
         /// Version of the advertised product.
@@ -454,20 +569,38 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// Primary icon for the package.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedProductIcon => this["ProductIcon"];
+        public string AdvertisedProductIcon
+        {
+            get
+            {
+                return this["ProductIcon"];
+            }
+        }
 
         /// <summary>
         /// Name of the installation package for the advertised product.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public string AdvertisedPackageName => this["PackageName"];
+        public string AdvertisedPackageName
+        {
+            get
+            {
+                return this["PackageName"];
+            }
+        }
 
         /// <summary>
         /// True if the advertised product can be serviced by
         /// non-administrators without elevation.
         /// </summary>
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public bool PrivilegedPatchingAuthorized => this["AuthorizedLUAApp"] == "1";
+        public bool PrivilegedPatchingAuthorized
+        {
+            get
+            {
+                return this["AuthorizedLUAApp"] == "1";
+            }
+        }
 
         /// <summary>
         /// Gets information about an installation of a product.
@@ -484,35 +617,36 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                if (properties != null)
+                if (this.properties != null)
                 {
-                    properties.TryGetValue(propertyName, out string value);
+                    string value = null;
+                    this.properties.TryGetValue(propertyName, out value);
                     return value;
                 }
                 else
                 {
                     StringBuilder buf = new StringBuilder(40);
-                    uint bufSize = (uint)buf.Capacity;
+                    uint bufSize = (uint) buf.Capacity;
                     uint ret;
 
-                    if (Context == UserContexts.UserManaged ||
-                        Context == UserContexts.UserUnmanaged ||
-                        Context == UserContexts.Machine)
+                    if (this.Context == UserContexts.UserManaged ||
+                        this.Context == UserContexts.UserUnmanaged ||
+                        this.Context == UserContexts.Machine)
                     {
                         ret = NativeMethods.MsiGetProductInfoEx(
-                            ProductCode,
-                            UserSid,
-                            Context,
+                            this.ProductCode,
+                            this.UserSid,
+                            this.Context,
                             propertyName,
                             buf,
                             ref bufSize);
-                        if (ret == (uint)NativeMethods.Error.MORE_DATA)
+                        if (ret == (uint) NativeMethods.Error.MORE_DATA)
                         {
-                            buf.Capacity = (int)++bufSize;
+                            buf.Capacity = (int) ++bufSize;
                             ret = NativeMethods.MsiGetProductInfoEx(
-                                ProductCode,
-                                UserSid,
-                                Context,
+                                this.ProductCode,
+                                this.UserSid,
+                                this.Context,
                                 propertyName,
                                 buf,
                                 ref bufSize);
@@ -521,15 +655,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                     else
                     {
                         ret = NativeMethods.MsiGetProductInfo(
-                            ProductCode,
+                            this.ProductCode,
                             propertyName,
                             buf,
                             ref bufSize);
-                        if (ret == (uint)NativeMethods.Error.MORE_DATA)
+                        if (ret == (uint) NativeMethods.Error.MORE_DATA)
                         {
-                            buf.Capacity = (int)++bufSize;
+                            buf.Capacity = (int) ++bufSize;
                             ret = NativeMethods.MsiGetProductInfo(
-                                ProductCode,
+                                this.ProductCode,
                                 propertyName,
                                 buf,
                                 ref bufSize);
@@ -562,23 +696,24 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public InstallState GetFeatureState(string feature)
         {
-            if (properties != null)
+            if (this.properties != null)
             {
                 return InstallState.Unknown;
             }
             else
             {
+                int installState;
                 uint ret = NativeMethods.MsiQueryFeatureStateEx(
-                    ProductCode,
-                    UserSid,
-                    Context,
+                    this.ProductCode,
+                    this.UserSid,
+                    this.Context,
                     feature,
-                    out int installState);
+                    out installState);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
                 }
-                return (InstallState)installState;
+                return (InstallState) installState;
             }
         }
 
@@ -596,23 +731,24 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public InstallState GetComponentState(string component)
         {
-            if (properties != null)
+            if (this.properties != null)
             {
                 return InstallState.Unknown;
             }
             else
             {
+                int installState;
                 uint ret = NativeMethods.MsiQueryComponentState(
-                    ProductCode,
-                    UserSid,
-                    Context,
+                    this.ProductCode,
+                    this.UserSid,
+                    this.Context,
                     component,
-                    out int installState);
+                    out installState);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
                 }
-                return (InstallState)installState;
+                return (InstallState) installState;
             }
         }
 
@@ -636,9 +772,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void CollectUserInfo()
         {
-            if (properties == null)
+            if (this.properties == null)
             {
-                uint ret = NativeMethods.MsiCollectUserInfo(InstallationCode);
+                uint ret = NativeMethods.MsiCollectUserInfo(this.InstallationCode);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
@@ -660,11 +796,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 for (int i = 0; i < ver.Length; i++)
                 {
                     char c = ver[i];
-                    if (c == '.')
-                    {
-                        dotCount++;
-                    }
-                    else if (!char.IsDigit(c))
+                    if (c == '.') dotCount++;
+                    else if (!Char.IsDigit(c))
                     {
                         ver = ver.Substring(0, i);
                         break;
@@ -680,7 +813,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                     else if (dotCount > 3)
                     {
                         string[] verSplit = ver.Split('.');
-                        ver = string.Join(".", verSplit, 0, 4);
+                        ver = String.Join(".", verSplit, 0, 4);
                     }
 
                     try

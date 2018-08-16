@@ -12,25 +12,23 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PowerShell.PackageManagement.Cmdlets
-{
-    using Microsoft.PackageManagement.Internal.Packaging;
-    using Microsoft.PackageManagement.Internal.Utility.Async;
-    using Microsoft.PackageManagement.Internal.Utility.Collections;
-    using Microsoft.PackageManagement.Internal.Utility.Extensions;
+namespace Microsoft.PowerShell.PackageManagement.Cmdlets {
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Linq;
     using System.Management.Automation;
+    using Microsoft.PackageManagement.Internal.Packaging;
+    using Microsoft.PackageManagement.Internal.Utility.Async;
+    using Microsoft.PackageManagement.Internal.Utility.Collections;
+    using Microsoft.PackageManagement.Internal.Utility.Extensions;
+    using Utility;
     using System.Security;
 
     [Cmdlet(VerbsLifecycle.Register, Constants.Nouns.PackageSourceNoun, SupportsShouldProcess = true, HelpUri = "https://go.microsoft.com/fwlink/?LinkID=517139")]
-    public sealed class RegisterPackageSource : CmdletWithProvider
-    {
+    public sealed class RegisterPackageSource : CmdletWithProvider {
         public RegisterPackageSource()
-            : base(new[] { OptionCategory.Provider, OptionCategory.Source })
-        {
+            : base(new[] {OptionCategory.Provider, OptionCategory.Source}) {
         }
 
         [Parameter]
@@ -41,9 +39,21 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
         [ValidateNotNull()]
         public PSCredential ProxyCredential { get; set; }
 
-        public override string CredentialUsername => Credential?.UserName;
+        public override string CredentialUsername
+        {
+            get
+            {
+                return Credential != null ? Credential.UserName : null;
+            }
+        }
 
-        public override SecureString CredentialPassword => Credential?.Password;
+        public override SecureString CredentialPassword
+        {
+            get
+            {
+                return Credential != null ? Credential.Password : null;
+            }
+        }
 
         /// <summary>
         /// Returns web proxy that provider can use
@@ -55,23 +65,24 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
             {
                 if (Proxy != null)
                 {
-                    return new PackageManagement.Utility.InternalWebProxy(Proxy, ProxyCredential?.GetNetworkCredential());
+                    return new PackageManagement.Utility.InternalWebProxy(Proxy, ProxyCredential == null ? null : ProxyCredential.GetNetworkCredential());
                 }
 
                 return null;
             }
         }
 
-        protected override IEnumerable<string> ParameterSets => new[] { "" };
+        protected override IEnumerable<string> ParameterSets {
+            get {
+                return new[] {""};
+            }
+        }
 
-        protected override void GenerateCmdletSpecificParameters(Dictionary<string, object> unboundArguments)
-        {
-            if (!IsInvocation)
-            {
-                IEnumerable<string> providerNames = PackageManagementService.AllProviderNames;
-                string[] whatsOnCmdline = GetDynamicParameterValue<string[]>("ProviderName");
-                if (whatsOnCmdline != null)
-                {
+        protected override void GenerateCmdletSpecificParameters(Dictionary<string, object> unboundArguments) {
+            if (!IsInvocation) {
+                var providerNames = PackageManagementService.AllProviderNames;
+                var whatsOnCmdline = GetDynamicParameterValue<string[]>("ProviderName");
+                if (whatsOnCmdline != null) {
                     providerNames = providerNames.Concat(whatsOnCmdline).Distinct();
                 }
 
@@ -84,8 +95,7 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
                     new ValidateSetAttribute(providerNames.ToArray())
                 }));
             }
-            else
-            {
+            else {
                 DynamicParameterDictionary.AddOrSet("ProviderName", new RuntimeDefinedParameter("ProviderName", typeof(string), new Collection<Attribute> {
                     new ParameterAttribute {
                         ValueFromPipelineByPropertyName = true,
@@ -96,26 +106,25 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
             }
         }
 
+
         [Parameter(Position = 0)]
-        public string Name { get; set; }
+        public string Name {get; set;}
 
         [Parameter(Position = 1)]
-        public string Location { get; set; }
+        public string Location {get; set;}
 
         [Parameter]
-        public PSCredential Credential { get; set; }
+        public PSCredential Credential {get; set;}
 
         [Parameter]
-        public SwitchParameter Trusted { get; set; }
+        public SwitchParameter Trusted {get; set;}
 
-        public override bool ProcessRecordAsync()
-        {
-            if (Stopping)
-            {
+        public override bool ProcessRecordAsync() {
+            if (Stopping) {
                 return false;
             }
 
-            MutableEnumerable<Microsoft.PackageManagement.Implementation.PackageProvider> packageProvider = SelectProviders(ProviderName).ReEnumerable();
+            var packageProvider = SelectProviders(ProviderName).ReEnumerable();
 
             if (ProviderName.IsNullOrEmpty())
             {
@@ -123,45 +132,38 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
                 return false;
             }
 
-            switch (packageProvider.Count())
-            {
-                case 0:
-                    Error(Constants.Errors.UnknownProvider, ProviderName);
-                    return false;
+                switch (packageProvider.Count()) {
+                    case 0:
+                        Error(Constants.Errors.UnknownProvider, ProviderName);
+                        return false;
 
-                case 1:
-                    break;
+                    case 1:
+                        break;
 
-                default:
-                    Error(Constants.Errors.MatchesMultipleProviders, packageProvider.Select(p => p.ProviderName).JoinWithComma());
-                    return false;
-            }
+                    default:
+                        Error(Constants.Errors.MatchesMultipleProviders, packageProvider.Select(p => p.ProviderName).JoinWithComma());
+                        return false;
+                }
 
-            Microsoft.PackageManagement.Implementation.PackageProvider provider = packageProvider.First();
 
-            using (IAsyncEnumerable<Microsoft.PackageManagement.Packaging.PackageSource> sources = provider.ResolvePackageSources(this).CancelWhen(CancellationEvent.Token))
-            {
+            var provider = packageProvider.First();
+
+            using (var sources = provider.ResolvePackageSources(this).CancelWhen(CancellationEvent.Token)) {
                 // first, check if there is a source by this name already.
-                Microsoft.PackageManagement.Packaging.PackageSource[] existingSources = sources.Where(each => each.IsRegistered && each.Name.Equals(Name, StringComparison.OrdinalIgnoreCase)).ToArray();
+                var existingSources = sources.Where(each => each.IsRegistered && each.Name.Equals(Name, StringComparison.OrdinalIgnoreCase)).ToArray();
 
-                if (existingSources.Any())
-                {
+                if (existingSources.Any()) {
                     // if there is, and the user has said -Force, then let's remove it.
-                    foreach (Microsoft.PackageManagement.Packaging.PackageSource existingSource in existingSources)
-                    {
-                        if (Force)
-                        {
-                            if (ShouldProcess(FormatMessageString(Constants.Messages.TargetPackageSource, existingSource.Name, existingSource.Location, existingSource.ProviderName), Constants.Messages.ActionReplacePackageSource).Result)
-                            {
-                                IAsyncEnumerable<Microsoft.PackageManagement.Packaging.PackageSource> removedSources = provider.RemovePackageSource(existingSource.Name, this).CancelWhen(CancellationEvent.Token);
-                                foreach (Microsoft.PackageManagement.Packaging.PackageSource removedSource in removedSources)
-                                {
+                    foreach (var existingSource in existingSources) {
+                        if (Force) {
+
+                            if (ShouldProcess(FormatMessageString(Constants.Messages.TargetPackageSource, existingSource.Name, existingSource.Location, existingSource.ProviderName), Constants.Messages.ActionReplacePackageSource).Result) {
+                                var removedSources = provider.RemovePackageSource(existingSource.Name, this).CancelWhen(CancellationEvent.Token);
+                                foreach (var removedSource in removedSources) {
                                     Verbose(Constants.Messages.OverwritingPackageSource, removedSource.Name);
                                 }
                             }
-                        }
-                        else
-                        {
+                        } else {
                             Error(Constants.Errors.PackageSourceExists, existingSource.Name);
                             return false;
                         }
@@ -172,30 +174,27 @@ namespace Microsoft.PowerShell.PackageManagement.Cmdlets
             string providerNameForProcessMessage = ProviderName.JoinWithComma();
             if (ShouldProcess(FormatMessageString(Constants.Messages.TargetPackageSource, Name, Location, providerNameForProcessMessage), FormatMessageString(Constants.Messages.ActionRegisterPackageSource)).Result)
             {
-                //Need to resolve the path created via psdrive.
+                //Need to resolve the path created via psdrive. 
                 //e.g., New-PSDrive -Name x -PSProvider FileSystem -Root \\foobar\myfolder. Here we are resolving x:\
                 try
                 {
                     if (FilesystemExtensions.LooksLikeAFilename(Location))
                     {
-                        Collection<string> resolvedPaths = GetResolvedProviderPathFromPSPath(Location, out ProviderInfo providerInfo);
+                        ProviderInfo providerInfo = null;
+                        var resolvedPaths = GetResolvedProviderPathFromPSPath(Location, out providerInfo);
 
                         // Ensure the path is a single path from the file system provider
-                        if ((providerInfo != null) && (resolvedPaths.Count == 1) && string.Equals(providerInfo.Name, "FileSystem", StringComparison.OrdinalIgnoreCase))
+                        if ((providerInfo != null) && (resolvedPaths.Count == 1) && String.Equals(providerInfo.Name, "FileSystem", StringComparison.OrdinalIgnoreCase))
                         {
                             Location = resolvedPaths[0];
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    //allow to continue handling the cases other than file system
+                } catch (Exception) {
+                    //allow to continue handling the cases other than file system                  
                 }
 
-                using (IAsyncEnumerable<Microsoft.PackageManagement.Packaging.PackageSource> added = provider.AddPackageSource(Name, Location, Trusted, this).CancelWhen(CancellationEvent.Token))
-                {
-                    foreach (Microsoft.PackageManagement.Packaging.PackageSource addedSource in added)
-                    {
+                using (var added = provider.AddPackageSource(Name, Location, Trusted, this).CancelWhen(CancellationEvent.Token)) {
+                    foreach (var addedSource in added) {
                         WriteObject(addedSource);
                     }
                 }
