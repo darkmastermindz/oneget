@@ -7,6 +7,11 @@
     using System.Management.Automation;
     using System.Management.Automation.Runspaces;
 
+#if CORECLR
+    using System.Runtime.InteropServices;
+#endif
+
+
     /// <summary>
     /// These are platform abstractions and platform specific implementations
     /// </summary>
@@ -25,6 +30,7 @@
         /// </summary>
         public static bool IsWindows
         {
+
             get
             {
                 if (_isWindows.HasValue) { return _isWindows.Value; }
@@ -33,6 +39,7 @@
                 try
                 {
                     _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
                 }
                 catch
                 {
