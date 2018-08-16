@@ -36,11 +36,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// IsFormatStringInvalid is set from several View methods that invalidate the FormatString
         /// and used to determine behavior during Record.ToString().
         /// </summary>
-        protected internal bool IsFormatStringInvalid
+        internal protected bool IsFormatStringInvalid
         {
-            set => isFormatStringInvalid = value;
+            set { this.isFormatStringInvalid = value; }
 
-            get => isFormatStringInvalid;
+            get { return this.isFormatStringInvalid; }
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msicreaterecord.asp">MsiCreateRecord</a>
         /// </p></remarks>
         public Record(int fieldCount)
-            : this((IntPtr)RemotableNativeMethods.MsiCreateRecord((uint)fieldCount, 0), true, null)
+            : this((IntPtr) RemotableNativeMethods.MsiCreateRecord((uint) fieldCount, 0), true, (View) null)
         {
         }
 
@@ -76,8 +76,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         public Record(params object[] fields)
             : this(fields.Length)
         {
-            if (fields == null)
-            {
+            if (fields== null) {
                 throw new ArgumentNullException("fields");
             }
 
@@ -100,7 +99,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// Win32 MSI API:
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msirecordgetfieldcount.asp">MsiRecordGetFieldCount</a>
         /// </p></remarks>
-        public int FieldCount => (int)RemotableNativeMethods.MsiRecordGetFieldCount((int)Handle);
+        public int FieldCount
+        {
+            get
+            {
+                return (int) RemotableNativeMethods.MsiRecordGetFieldCount((int) this.Handle);
+            }
+        }
 
         /// <summary>
         /// Gets or sets field 0 of the Record, which is the format string.
@@ -108,8 +113,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string FormatString
         {
-            get => GetString(0);
-            set => SetString(0, value);
+            get { return this.GetString(0); }
+            set { this.SetString(0, value); }
         }
 
         /// <summary>
@@ -131,13 +136,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
-                int field = FindColumn(fieldName);
+                int field = this.FindColumn(fieldName);
                 return this[field];
             }
 
             set
             {
-                int field = FindColumn(fieldName);
+                int field = this.FindColumn(fieldName);
                 this[field] = value;
             }
         }
@@ -176,30 +181,31 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             {
                 if (field <= 0)
                 {
-                    return GetString(0);
+                    return this.GetString(0);
                 }
 
                 Type valueType = null;
-                if (view != null)
+                if (this.view != null)
                 {
-                    CheckRange(field);
+                    this.CheckRange(field);
 
-                    valueType = view.Columns[field - 1].Type;
+                    valueType = this.view.Columns[field - 1].Type;
                 }
 
-                if (valueType == null || valueType == typeof(string))
+                if (valueType == null || valueType == typeof(String))
                 {
-                    return GetString(field);
+                    return this.GetString(field);
                 }
                 else if (valueType == typeof(Stream))
                 {
-                    return IsNull(field) ? null : new RecordStream(this, field);
+                    return this.IsNull(field) ? null : new RecordStream(this, field);
                 }
                 else
                 {
-                    int? value = GetNullableInteger(field);
-                    return value.HasValue ? (object)value.Value : null;
+                    int? value = this.GetNullableInteger(field);
+                    return value.HasValue ? (object) value.Value : null;
                 }
+
             }
 
             set
@@ -208,29 +214,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 {
                     if (value == null)
                     {
-                        value = string.Empty;
+                        value = String.Empty;
                     }
 
-                    SetString(0, value.ToString());
+                    this.SetString(0, value.ToString());
                 }
                 else if (value == null)
                 {
-                    SetNullableInteger(field, null);
+                    this.SetNullableInteger(field, null);
                 }
                 else
                 {
                     Type valueType = value.GetType();
-                    if (valueType == typeof(int) || valueType == typeof(short))
+                    if (valueType == typeof(Int32) || valueType == typeof(Int16))
                     {
-                        SetInteger(field, (int)value);
+                        this.SetInteger(field, (int) value);
                     }
                     else if (valueType.IsSubclassOf(typeof(Stream)))
                     {
-                        SetStream(field, (Stream)value);
+                        this.SetStream(field, (Stream) value);
                     }
                     else
                     {
-                        SetString(field, value.ToString());
+                        this.SetString(field, value.ToString());
                     }
                 }
             }
@@ -249,7 +255,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <param name="ownsHandle">true to close the handle when this object is disposed or finalized</param>
         public static Record FromHandle(IntPtr handle, bool ownsHandle)
         {
-            return new Record(handle, ownsHandle, null);
+            return new Record(handle, ownsHandle, (View) null);
         }
 
         /// <summary>
@@ -262,7 +268,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void Clear()
         {
-            uint ret = RemotableNativeMethods.MsiRecordClearData((int)Handle);
+            uint ret = RemotableNativeMethods.MsiRecordClearData((int) this.Handle);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -282,8 +288,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public bool IsNull(int field)
         {
-            CheckRange(field);
-            return RemotableNativeMethods.MsiRecordIsNull((int)Handle, (uint)field);
+            this.CheckRange(field);
+            return RemotableNativeMethods.MsiRecordIsNull((int) this.Handle, (uint) field);
         }
 
         /// <summary>
@@ -296,8 +302,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public bool IsNull(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return IsNull(field);
+            int field = this.FindColumn(fieldName);
+            return this.IsNull(field);
         }
 
         /// <summary>
@@ -322,8 +328,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public int GetDataSize(int field)
         {
-            CheckRange(field);
-            return (int)RemotableNativeMethods.MsiRecordDataSize((int)Handle, (uint)field);
+            this.CheckRange(field);
+            return (int) RemotableNativeMethods.MsiRecordDataSize((int) this.Handle, (uint) field);
         }
 
         /// <summary>
@@ -346,8 +352,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int GetDataSize(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return GetDataSize(field);
+            int field = this.FindColumn(fieldName);
+            return this.GetDataSize(field);
         }
 
         /// <summary>
@@ -365,10 +371,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Naming", "CA1720:IdentifiersShouldNotContainTypeNames", MessageId = "integer")]
         public int GetInteger(int field)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
-            int value = RemotableNativeMethods.MsiRecordGetInteger((int)Handle, (uint)field);
-            if (value == int.MinValue)  // MSI_NULL_INTEGER
+            int value = RemotableNativeMethods.MsiRecordGetInteger((int) this.Handle, (uint) field);
+            if (value == Int32.MinValue)  // MSI_NULL_INTEGER
             {
                 return 0;
             }
@@ -387,8 +393,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int GetInteger(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return GetInteger(field);
+            int field = this.FindColumn(fieldName);
+            return this.GetInteger(field);
         }
 
         /// <summary>
@@ -405,10 +411,10 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <seealso cref="GetInteger(int)"/>
         public int? GetNullableInteger(int field)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
-            int value = RemotableNativeMethods.MsiRecordGetInteger((int)Handle, (uint)field);
-            if (value == int.MinValue)  // MSI_NULL_INTEGER
+            int value = RemotableNativeMethods.MsiRecordGetInteger((int) this.Handle, (uint) field);
+            if (value == Int32.MinValue)  // MSI_NULL_INTEGER
             {
                 return null;
             }
@@ -426,8 +432,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int? GetNullableInteger(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return GetInteger(field);
+            int field = this.FindColumn(fieldName);
+            return this.GetInteger(field);
         }
 
         /// <summary>
@@ -444,9 +450,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <seealso cref="SetNullableInteger(int,int?)"/>
         public void SetInteger(int field, int value)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
-            uint ret = RemotableNativeMethods.MsiRecordSetInteger((int)Handle, (uint)field, value);
+            uint ret = RemotableNativeMethods.MsiRecordSetInteger((int) this.Handle, (uint) field, value);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -464,8 +470,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void SetInteger(string fieldName, int value)
         {
-            int field = FindColumn(fieldName);
-            SetInteger(field, value);
+            int field = this.FindColumn(fieldName);
+            this.SetInteger(field, value);
         }
 
         /// <summary>
@@ -482,12 +488,12 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <seealso cref="SetInteger(int,int)"/>
         public void SetNullableInteger(int field, int? value)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
             uint ret = RemotableNativeMethods.MsiRecordSetInteger(
-                (int)Handle,
-                (uint)field,
-                value.HasValue ? (int)value : int.MinValue);
+                (int) this.Handle,
+                (uint) field,
+                value.HasValue ? (int) value : Int32.MinValue);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -505,8 +511,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void SetNullableInteger(string fieldName, int? value)
         {
-            int field = FindColumn(fieldName);
-            SetNullableInteger(field, value);
+            int field = this.FindColumn(fieldName);
+            this.SetNullableInteger(field, value);
         }
 
         /// <summary>
@@ -522,15 +528,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public string GetString(int field)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
-            StringBuilder buf = new StringBuilder(string.Empty);
+            StringBuilder buf = new StringBuilder(String.Empty);
             uint bufSize = 0;
-            uint ret = RemotableNativeMethods.MsiRecordGetString((int)Handle, (uint)field, buf, ref bufSize);
-            if (ret == (uint)NativeMethods.Error.MORE_DATA)
+            uint ret = RemotableNativeMethods.MsiRecordGetString((int) this.Handle, (uint) field, buf, ref bufSize);
+            if (ret == (uint) NativeMethods.Error.MORE_DATA)
             {
-                buf.Capacity = (int)++bufSize;
-                ret = RemotableNativeMethods.MsiRecordGetString((int)Handle, (uint)field, buf, ref bufSize);
+                buf.Capacity = (int) ++bufSize;
+                ret = RemotableNativeMethods.MsiRecordGetString((int) this.Handle, (uint) field, buf, ref bufSize);
             }
             if (ret != 0)
             {
@@ -548,8 +554,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// of the named fields in the Record.</exception>
         public string GetString(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return GetString(field);
+            int field = this.FindColumn(fieldName);
+            return this.GetString(field);
         }
 
         /// <summary>
@@ -565,14 +571,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public void SetString(int field, string value)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
             if (value == null)
             {
-                value = string.Empty;
+                value = String.Empty;
             }
 
-            uint ret = RemotableNativeMethods.MsiRecordSetString((int)Handle, (uint)field, value);
+            uint ret = RemotableNativeMethods.MsiRecordSetString((int) this.Handle, (uint) field, value);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -581,7 +587,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             // If we set the FormatString manually, then it should be valid again
             if (field == 0)
             {
-                IsFormatStringInvalid = false;
+                this.IsFormatStringInvalid = false;
             }
         }
 
@@ -595,8 +601,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void SetString(string fieldName, string value)
         {
-            int field = FindColumn(fieldName);
-            SetString(field, value);
+            int field = this.FindColumn(fieldName);
+            this.SetString(field, value);
         }
 
         /// <summary>
@@ -623,29 +629,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("filePath");
             }
 
-            IList<TableInfo> tables = view?.Tables;
-            if (tables != null && tables.Count == 1 && tables[0].Name == "_Storages" && field == FindColumn("Data"))
+            IList<TableInfo> tables = (this.view != null ? this.view.Tables : null);
+            if (tables != null && tables.Count == 1 && tables[0].Name == "_Storages" && field == this.FindColumn("Data"))
             {
-                if (!view.Database.IsReadOnly)
+                if (!this.view.Database.IsReadOnly)
                 {
                     throw new NotSupportedException("Database must be opened read-only to support substorage extraction.");
                 }
-                else if (view.Database.FilePath == null)
+                else if (this.view.Database.FilePath == null)
                 {
                     throw new NotSupportedException("Database must have an associated file path to support substorage extraction.");
                 }
-                else if (FindColumn("Name") <= 0)
+                else if (this.FindColumn("Name") <= 0)
                 {
                     throw new NotSupportedException("Name column must be part of the Record in order to extract substorage.");
                 }
                 else
                 {
-                    Record.ExtractSubStorage(view.Database.FilePath, GetString("Name"), filePath);
+                    Record.ExtractSubStorage(this.view.Database.FilePath, this.GetString("Name"), filePath);
                 }
             }
             else
             {
-                if (!IsNull(field))
+                if (!this.IsNull(field))
                 {
                     Stream readStream = null, writeStream = null;
                     try
@@ -664,15 +670,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                     }
                     finally
                     {
-                        if (readStream != null)
-                        {
-                            readStream.Close();
-                        }
-
-                        if (writeStream != null)
-                        {
-                            writeStream.Close();
-                        }
+                        if (readStream != null) readStream.Close();
+                        if (writeStream != null) writeStream.Close();
                     }
                 }
             }
@@ -694,8 +693,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public void GetStream(string fieldName, string filePath)
         {
-            int field = FindColumn(fieldName);
-            GetStream(field, filePath);
+            int field = this.FindColumn(fieldName);
+            this.GetStream(field, filePath);
         }
 
         /// <summary>
@@ -715,9 +714,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public Stream GetStream(int field)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
-            return IsNull(field) ? null : new RecordStream(this, field);
+            return this.IsNull(field) ? null : new RecordStream(this, field);
         }
 
         /// <summary>
@@ -734,8 +733,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public Stream GetStream(string fieldName)
         {
-            int field = FindColumn(fieldName);
-            return GetStream(field);
+            int field = this.FindColumn(fieldName);
+            return this.GetStream(field);
         }
 
         /// <summary>
@@ -760,14 +759,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public void SetStream(int field, string filePath)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
             if (string.IsNullOrWhiteSpace(filePath))
             {
                 throw new ArgumentNullException("filePath");
             }
 
-            uint ret = RemotableNativeMethods.MsiRecordSetStream((int)Handle, (uint)field, filePath);
+            uint ret = RemotableNativeMethods.MsiRecordSetStream((int) this.Handle, (uint) field, filePath);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -793,8 +792,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void SetStream(string fieldName, string filePath)
         {
-            int field = FindColumn(fieldName);
-            SetStream(field, filePath);
+            int field = this.FindColumn(fieldName);
+            this.SetStream(field, filePath);
         }
 
         /// <summary>
@@ -812,11 +811,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public void SetStream(int field, Stream stream)
         {
-            CheckRange(field);
+            this.CheckRange(field);
 
             if (stream == null)
             {
-                uint ret = RemotableNativeMethods.MsiRecordSetStream((int)Handle, (uint)field, null);
+                uint ret = RemotableNativeMethods.MsiRecordSetStream((int) this.Handle, (uint) field, null);
                 if (ret != 0)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
@@ -838,7 +837,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                     writeStream.Close();
                     writeStream = null;
 
-                    uint ret = RemotableNativeMethods.MsiRecordSetStream((int)Handle, (uint)field, tempPath);
+                    uint ret = RemotableNativeMethods.MsiRecordSetStream((int) this.Handle, (uint) field, tempPath);
                     if (ret != 0)
                     {
                         throw InstallerException.ExceptionFromReturnCode(ret);
@@ -846,11 +845,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 }
                 finally
                 {
-                    if (writeStream != null)
-                    {
-                        writeStream.Close();
-                    }
-
+                    if (writeStream != null) writeStream.Close();
                     if (File.Exists(tempPath))
                     {
                         try
@@ -859,9 +854,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                         }
                         catch (IOException)
                         {
-                            if (view != null)
+                            if (this.view != null)
                             {
-                                view.Database.DeleteOnClose(tempPath);
+                                this.view.Database.DeleteOnClose(tempPath);
                             }
                         }
                     }
@@ -882,8 +877,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public void SetStream(string fieldName, Stream stream)
         {
-            int field = FindColumn(fieldName);
-            SetStream(field, stream);
+            int field = this.FindColumn(fieldName);
+            this.SetStream(field, stream);
         }
 
         /// <summary>
@@ -900,7 +895,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <seealso cref="Session.FormatRecord(Record)"/>
         public override string ToString()
         {
-            return ToString((IFormatProvider)null);
+            return this.ToString((IFormatProvider) null);
         }
 
         /// <summary>
@@ -919,21 +914,22 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <seealso cref="Session.FormatRecord(Record)"/>
         public string ToString(IFormatProvider provider)
         {
-            if (IsFormatStringInvalid) // Format string is invalid
+            if (this.IsFormatStringInvalid) // Format string is invalid
             {
                 // TODO: return all values by default?
-                return string.Empty;
+                return String.Empty;
             }
 
-            int sessionHandle = provider is InstallerHandle session ? (int)session.Handle : 0;
-            StringBuilder buf = new StringBuilder(string.Empty);
+            InstallerHandle session = provider as InstallerHandle;
+            int sessionHandle = session != null ? (int) session.Handle : 0;
+            StringBuilder buf = new StringBuilder(String.Empty);
             uint bufSize = 1;
-            uint ret = RemotableNativeMethods.MsiFormatRecord(sessionHandle, (int)Handle, buf, ref bufSize);
-            if (ret == (uint)NativeMethods.Error.MORE_DATA)
+            uint ret = RemotableNativeMethods.MsiFormatRecord(sessionHandle, (int) this.Handle, buf, ref bufSize);
+            if (ret == (uint) NativeMethods.Error.MORE_DATA)
             {
                 bufSize++;
-                buf = new StringBuilder((int)bufSize);
-                ret = RemotableNativeMethods.MsiFormatRecord(sessionHandle, (int)Handle, buf, ref bufSize);
+                buf = new StringBuilder((int) bufSize);
+                ret = RemotableNativeMethods.MsiFormatRecord(sessionHandle, (int) this.Handle, buf, ref bufSize);
             }
             if (ret != 0)
             {
@@ -957,7 +953,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string ToString(string format)
         {
-            return ToString(format, null);
+            return this.ToString(format, null);
         }
 
         /// <summary>
@@ -980,23 +976,23 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             if (format == null)
             {
-                return ToString(provider);
+                return this.ToString(provider);
             }
             else if (format.Length == 0)
             {
-                return string.Empty;
+                return String.Empty;
             }
             else
             {
-                string savedFormatString = (string)this[0];
+                string savedFormatString = (string) this[0];
                 try
                 {
-                    FormatString = format;
-                    return ToString(provider);
+                    this.FormatString = format;
+                    return this.ToString(provider);
                 }
                 finally
                 {
-                    FormatString = savedFormatString;
+                    this.FormatString = savedFormatString;
                 }
             }
         }
@@ -1004,8 +1000,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Security", "CA2122:DoNotIndirectlyExposeMethodsWithLinkDemands")]
         private static void ExtractSubStorage(string databaseFile, string storageName, string extractFile)
         {
+            IStorage storage;
             NativeMethods.STGM openMode = NativeMethods.STGM.READ | NativeMethods.STGM.SHARE_DENY_WRITE;
-            int hr = NativeMethods.StgOpenStorage(databaseFile, IntPtr.Zero, (uint)openMode, IntPtr.Zero, 0, out IStorage storage);
+            int hr = NativeMethods.StgOpenStorage(databaseFile, IntPtr.Zero, (uint) openMode, IntPtr.Zero, 0, out storage);
             if (hr != 0)
             {
                 Marshal.ThrowExceptionForHR(hr);
@@ -1014,12 +1011,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             try
             {
                 openMode = NativeMethods.STGM.READ | NativeMethods.STGM.SHARE_EXCLUSIVE;
-                IStorage subStorage = storage.OpenStorage(storageName, IntPtr.Zero, (uint)openMode, IntPtr.Zero, 0);
+                IStorage subStorage = storage.OpenStorage(storageName, IntPtr.Zero, (uint) openMode, IntPtr.Zero, 0);
 
                 try
                 {
+                    IStorage newStorage;
                     openMode = NativeMethods.STGM.CREATE | NativeMethods.STGM.READWRITE | NativeMethods.STGM.SHARE_EXCLUSIVE;
-                    hr = NativeMethods.StgCreateDocfile(extractFile, (uint)openMode, 0, out IStorage newStorage);
+                    hr = NativeMethods.StgCreateDocfile(extractFile, (uint) openMode, 0, out newStorage);
                     if (hr != 0)
                     {
                         Marshal.ThrowExceptionForHR(hr);
@@ -1049,11 +1047,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 
         private int FindColumn(string fieldName)
         {
-            if (view == null)
+            if (this.view == null)
             {
                 throw new InvalidOperationException();
             }
-            ColumnCollection columns = view.Columns;
+            ColumnCollection columns = this.view.Columns;
             for (int i = 0; i < columns.Count; i++)
             {
                 if (columns[i].Name == fieldName)
@@ -1066,7 +1064,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 
         private void CheckRange(int field)
         {
-            if (field < 0 || field > FieldCount)
+            if (field < 0 || field > this.FieldCount)
             {
                 throw new ArgumentOutOfRangeException("field");
             }

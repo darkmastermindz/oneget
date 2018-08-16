@@ -61,7 +61,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             : base(msg, innerException)
         {
             this.errorCode = errorCode;
-            SaveErrorRecord();
+            this.SaveErrorRecord();
         }
 
         internal InstallerException(int errorCode, string msg)
@@ -81,25 +81,31 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("info");
             }
 
-            errorCode = info.GetInt32("msiErrorCode");
+            this.errorCode = info.GetInt32("msiErrorCode");
         }
 
         /// <summary>
         /// Gets the system error code that resulted in this exception, or 0 if not applicable.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public int ErrorCode => errorCode;
+        public int ErrorCode
+        {
+            get
+            {
+                return this.errorCode;
+            }
+        }
 
         /// <summary>
         /// Gets a message that describes the exception.  This message may contain detailed
         /// formatted error data if it was available.
         /// </summary>
-        public override string Message
+        public override String Message
         {
             get
             {
                 string msg = base.Message;
-                using (Record errorRec = GetErrorRecord())
+                using (Record errorRec = this.GetErrorRecord())
                 {
                     if (errorRec != null)
                     {
@@ -116,7 +122,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter=true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -124,7 +130,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("info");
             }
 
-            info.AddValue("msiErrorCode", errorCode);
+            info.AddValue("msiErrorCode", this.errorCode);
             base.GetObjectData(info, context);
         }
 
@@ -197,7 +203,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public Record GetErrorRecord()
         {
-            return errorData != null ? new Record(errorData) : null;
+            return this.errorData != null ? new Record(this.errorData) : null;
         }
 
         internal static Exception ExceptionFromReturnCode(uint errorCode)
@@ -210,47 +216,45 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             msg = Combine(GetSystemMessage(errorCode), msg);
             switch (errorCode)
             {
-                case (uint)NativeMethods.Error.FILE_NOT_FOUND:
-                case (uint)NativeMethods.Error.PATH_NOT_FOUND: return new FileNotFoundException(msg);
+                case (uint) NativeMethods.Error.FILE_NOT_FOUND:
+                case (uint) NativeMethods.Error.PATH_NOT_FOUND: return new FileNotFoundException(msg);
 
-                case (uint)NativeMethods.Error.INVALID_PARAMETER:
-                case (uint)NativeMethods.Error.DIRECTORY:
-                case (uint)NativeMethods.Error.UNKNOWN_PROPERTY:
-                case (uint)NativeMethods.Error.UNKNOWN_PRODUCT:
-                case (uint)NativeMethods.Error.UNKNOWN_FEATURE:
-                case (uint)NativeMethods.Error.UNKNOWN_COMPONENT: return new ArgumentException(msg);
+                case (uint) NativeMethods.Error.INVALID_PARAMETER:
+                case (uint) NativeMethods.Error.DIRECTORY:
+                case (uint) NativeMethods.Error.UNKNOWN_PROPERTY:
+                case (uint) NativeMethods.Error.UNKNOWN_PRODUCT:
+                case (uint) NativeMethods.Error.UNKNOWN_FEATURE:
+                case (uint) NativeMethods.Error.UNKNOWN_COMPONENT: return new ArgumentException(msg);
 
-                case (uint)NativeMethods.Error.BAD_QUERY_SYNTAX: return new BadQuerySyntaxException(msg);
+                case (uint) NativeMethods.Error.BAD_QUERY_SYNTAX: return new BadQuerySyntaxException(msg);
 
-                case (uint)NativeMethods.Error.INVALID_HANDLE_STATE:
-                case (uint)NativeMethods.Error.INVALID_HANDLE:
-                    InvalidHandleException ihex = new InvalidHandleException(msg)
-                    {
-                        errorCode = (int)errorCode
-                    };
+                case (uint) NativeMethods.Error.INVALID_HANDLE_STATE:
+                case (uint) NativeMethods.Error.INVALID_HANDLE:
+                    InvalidHandleException ihex = new InvalidHandleException(msg);
+                    ihex.errorCode = (int) errorCode;
                     return ihex;
 
-                case (uint)NativeMethods.Error.INSTALL_USEREXIT: return new InstallCanceledException(msg);
+                case (uint) NativeMethods.Error.INSTALL_USEREXIT: return new InstallCanceledException(msg);
 
-                case (uint)NativeMethods.Error.CALL_NOT_IMPLEMENTED: return new NotImplementedException(msg);
+                case (uint) NativeMethods.Error.CALL_NOT_IMPLEMENTED: return new NotImplementedException(msg);
 
-                default: return new InstallerException((int)errorCode, msg);
+                default: return new InstallerException((int) errorCode, msg);
             }
         }
 
         internal static string GetSystemMessage(uint errorCode)
         {
-            const uint FORMAT_MESSAGE_IGNORE_INSERTS = 0x00000200;
-            const uint FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;
+            const uint FORMAT_MESSAGE_IGNORE_INSERTS  = 0x00000200;
+            const uint FORMAT_MESSAGE_FROM_SYSTEM     = 0x00001000;
 
             StringBuilder buf = new StringBuilder(1024);
             uint formatCount = NativeMethods.FormatMessage(
                 FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                 IntPtr.Zero,
-                errorCode,
+                (uint) errorCode,
                 0,
                 buf,
-                (uint)buf.Capacity,
+                (uint) buf.Capacity,
                 IntPtr.Zero);
 
             if (formatCount != 0)
@@ -269,33 +273,25 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             int recordHandle = RemotableNativeMethods.MsiGetLastErrorRecord(0);
             if (recordHandle != 0)
             {
-                using (Record errorRec = new Record((IntPtr)recordHandle, true, null))
+                using (Record errorRec = new Record((IntPtr) recordHandle, true, null))
                 {
-                    errorData = new object[errorRec.FieldCount];
-                    for (int i = 0; i < errorData.Length; i++)
+                    this.errorData = new object[errorRec.FieldCount];
+                    for (int i = 0; i < this.errorData.Length; i++)
                     {
-                        errorData[i] = errorRec[i + 1];
+                        this.errorData[i] = errorRec[i + 1];
                     }
                 }
             }
             else
             {
-                errorData = null;
+                this.errorData = null;
             }
         }
 
         private static string Combine(string msg1, string msg2)
         {
-            if (msg1 == null)
-            {
-                return msg2;
-            }
-
-            if (msg2 == null)
-            {
-                return msg1;
-            }
-
+            if (msg1 == null) return msg2;
+            if (msg2 == null) return msg1;
             return msg1 + " " + msg2;
         }
     }
@@ -315,7 +311,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
         /// is raised in a catch block that handles the inner exception.</param>
         public InstallCanceledException(string msg, Exception innerException)
-            : base((int)NativeMethods.Error.INSTALL_USEREXIT, msg, innerException)
+            : base((int) NativeMethods.Error.INSTALL_USEREXIT, msg, innerException)
         {
         }
 
@@ -362,7 +358,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
         /// is raised in a catch block that handles the inner exception.</param>
         public BadQuerySyntaxException(string msg, Exception innerException)
-            : base((int)NativeMethods.Error.BAD_QUERY_SYNTAX, msg, innerException)
+            : base((int) NativeMethods.Error.BAD_QUERY_SYNTAX, msg, innerException)
         {
         }
 
@@ -409,7 +405,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// innerException parameter is not a null reference (Nothing in Visual Basic), the current exception
         /// is raised in a catch block that handles the inner exception.</param>
         public InvalidHandleException(string msg, Exception innerException)
-            : base((int)NativeMethods.Error.INVALID_HANDLE, msg, innerException)
+            : base((int) NativeMethods.Error.INVALID_HANDLE, msg, innerException)
         {
         }
 
@@ -449,7 +445,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     internal class MergeException : InstallerException
     {
         private IList<string> conflictTables;
-        private readonly IList<int> conflictCounts;
+        private IList<int> conflictCounts;
 
         /// <summary>
         /// Creates a new MergeException with a specified error message and a reference to the
@@ -496,18 +492,15 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 {
                     view.Execute();
 
-                    foreach (Record rec in view)
+                    foreach (Record rec in view) using (rec)
                     {
-                        using (rec)
-                        {
-                            conflictTableList.Add(rec.GetString(1));
-                            conflictCountList.Add(rec.GetInteger(2));
-                        }
+                        conflictTableList.Add(rec.GetString(1));
+                        conflictCountList.Add((int) rec.GetInteger(2));
                     }
                 }
 
-                conflictTables = conflictTableList;
-                conflictCounts = conflictCountList;
+                this.conflictTables = conflictTableList;
+                this.conflictCounts = conflictCountList;
             }
         }
 
@@ -523,8 +516,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("info");
             }
 
-            conflictTables = (string[])info.GetValue("mergeConflictTables", typeof(string[]));
-            conflictCounts = (int[])info.GetValue("mergeConflictCounts", typeof(int[]));
+            this.conflictTables = (string[]) info.GetValue("mergeConflictTables", typeof(string[]));
+            this.conflictCounts = (int[]) info.GetValue("mergeConflictCounts", typeof(int[]));
         }
 
         /// <summary>
@@ -532,30 +525,42 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <see cref="ConflictTables"/>.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public IList<int> ConflictCounts => new List<int>(conflictCounts);
+        public IList<int> ConflictCounts
+        {
+            get
+            {
+                return new List<int>(this.conflictCounts);
+            }
+        }
 
         /// <summary>
         /// Gets the list of tables containing merge conflicts.
         /// </summary>
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public IList<string> ConflictTables => new List<string>(conflictTables);
+        public IList<string> ConflictTables
+        {
+            get
+            {
+                return new List<string>(this.conflictTables);
+            }
+        }
 
         /// <summary>
         /// Gets a message that describes the merge conflicts.
         /// </summary>
-        public override string Message
+        public override String Message
         {
             get
             {
                 StringBuilder msg = new StringBuilder(base.Message);
-                if (conflictTables != null)
+                if (this.conflictTables != null)
                 {
-                    for (int i = 0; i < conflictTables.Count; i++)
+                    for (int i = 0; i < this.conflictTables.Count; i++)
                     {
                         msg.Append(i == 0 ? "  Conflicts: " : ", ");
-                        msg.Append(conflictTables[i]);
+                        msg.Append(this.conflictTables[i]);
                         msg.Append('(');
-                        msg.Append(conflictCounts[i]);
+                        msg.Append(this.conflictCounts[i]);
                         msg.Append(')');
                     }
                 }
@@ -568,7 +573,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter=true)]
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             if (info == null)
@@ -576,8 +581,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("info");
             }
 
-            info.AddValue("mergeConflictTables", conflictTables);
-            info.AddValue("mergeConflictCounts", conflictCounts);
+            info.AddValue("mergeConflictTables", this.conflictTables);
+            info.AddValue("mergeConflictCounts", this.conflictCounts);
             base.GetObjectData(info, context);
         }
     }

@@ -17,9 +17,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     [SuppressMessage("Microsoft.Performance", "CA1815:OverrideEqualsAndOperatorEqualsOnValueTypes")]
     public struct InstallCost
     {
-        private readonly string driveName;
-        private readonly long cost;
-        private readonly long tempCost;
+        private string driveName;
+        private long cost;
+        private long tempCost;
 
         /// <summary>
         /// Creates a new InstallCost object.
@@ -37,12 +37,24 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// The name of the drive this cost data applies to.
         /// </summary>
-        public string DriveName => driveName;
+        public string DriveName
+        {
+            get
+            {
+                return this.driveName;
+            }
+        }
 
         /// <summary>
         /// The installation cost on this drive, as a number of bytes.
         /// </summary>
-        public long Cost => cost;
+        public long Cost
+        {
+            get
+            {
+                return this.cost;
+            }
+        }
 
         /// <summary>
         /// The temporary disk space required on this drive, as a number of bytes.
@@ -51,6 +63,12 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// This temporary space requirement is space needed only for the duration
         /// of the installation, over the final footprint on disk.
         /// </p></remarks>
-        public long TempCost => tempCost;
+        public long TempCost
+        {
+            get
+            {
+                return this.tempCost;
+            }
+        }
     }
 }

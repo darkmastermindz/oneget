@@ -7,23 +7,22 @@
     using System.Linq;
     using System.Net.Http;
     using System.Text;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Xml.Linq;
 
-    internal static class HttpContentExtensions
-    {
-        internal static async Task<long> ReadAsFileAsync(this HttpContent content, string fileName)
-        {
+    internal static class HttpContentExtensions {
+
+        internal static async Task<long> ReadAsFileAsync(this HttpContent content, string fileName) {
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 throw new ArgumentException(fileName);
             }
 
             //Get the absolute path
-            string pathName = Path.GetFullPath(fileName);
+            var pathName = Path.GetFullPath(fileName);
 
-            using (FileStream fileStream = new FileStream(pathName, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
+            using (var fileStream = new FileStream(pathName, FileMode.Create, FileAccess.Write, FileShare.None)) {
                 await content.CopyToAsync(fileStream);
                 return fileStream.Length;
             }
@@ -48,7 +47,7 @@
         {
             XAttribute attr;
             // Name space is null so don't use it
-            if (string.IsNullOrWhiteSpace(namespaceName))
+            if (String.IsNullOrWhiteSpace(namespaceName))
             {
                 attr = element.Attribute(localName);
             }
@@ -57,23 +56,24 @@
                 attr = element.Attribute(XName.Get(localName, namespaceName));
             }
 
-            return attr?.Value;
+            return attr != null ? attr.Value : null;
         }
     }
 
     internal static class VersionExtensions
-    {
+    {      
         internal static IEnumerable<string> GetComparableVersionStrings(this SemanticVersion version)
         {
             Version coreVersion = version.Version;
-            string specialVersion = string.IsNullOrWhiteSpace(version.SpecialVersion) ? string.Empty : "-" + version.SpecialVersion;
+            string specialVersion = String.IsNullOrWhiteSpace(version.SpecialVersion) ? String.Empty : "-" + version.SpecialVersion;
             string[] originalVersionComponents = version.GetOriginalVersionComponents();
+
 
             if (coreVersion.Revision == 0)
             {
                 if (coreVersion.Build == 0)
                 {
-                    yield return string.Format(
+                    yield return String.Format(
                         CultureInfo.InvariantCulture,
                         "{0}.{1}{2}",
                         originalVersionComponents[0],
@@ -81,7 +81,7 @@
                         specialVersion);
                 }
 
-                yield return string.Format(
+                yield return String.Format(
                     CultureInfo.InvariantCulture,
                     "{0}.{1}.{2}{3}",
                     originalVersionComponents[0],
@@ -90,7 +90,7 @@
                     specialVersion);
             }
 
-            yield return string.Format(
+            yield return String.Format(
                    CultureInfo.InvariantCulture,
                    "{0}.{1}.{2}.{3}{4}",
                    originalVersionComponents[0],
@@ -98,6 +98,7 @@
                    originalVersionComponents[2],
                    originalVersionComponents[3],
                    specialVersion);
+
         }
     }
 
@@ -105,7 +106,7 @@
     {
         internal static string ToStringSafe(this object obj)
         {
-            return obj?.ToString();
+            return obj == null ? null : obj.ToString();
         }
     }
 
@@ -113,7 +114,7 @@
     {
         internal static string SafeTrim(this string value)
         {
-            return value?.Trim();
+            return value == null ? null : value.Trim();
         }
 
         internal static string ToBase64(this string text)
@@ -136,7 +137,7 @@
 
         internal static string FixVersion(this string versionString)
         {
-            if (!string.IsNullOrWhiteSpace(versionString))
+            if (!String.IsNullOrWhiteSpace(versionString))
             {
                 if (versionString[0] == '.')
                 {
@@ -163,7 +164,7 @@
         // Creates a string from a collection of UTF8 bytes
         private static string ToUtf8String(this IEnumerable<byte> bytes)
         {
-            byte[] data = bytes.ToArray();
+            var data = bytes.ToArray();
             try
             {
                 return Encoding.UTF8.GetString(data);
@@ -196,7 +197,7 @@
 
         public static bool CompareVersion(this string version1, string version2)
         {
-            if (string.IsNullOrWhiteSpace(version1) && string.IsNullOrWhiteSpace(version2))
+            if(string.IsNullOrWhiteSpace(version1) && string.IsNullOrWhiteSpace(version2))
             {
                 return true;
             }
@@ -205,8 +206,8 @@
                 return false;
             }
 
-            SemanticVersion semver1 = new SemanticVersion(version1);
-            SemanticVersion semver2 = new SemanticVersion(version2);
+            var semver1 = new SemanticVersion(version1);
+            var semver2 = new SemanticVersion(version2);
             return (semver1 == semver2);
         }
     }
@@ -228,8 +229,8 @@
                 throw new ArgumentNullException("elementSelector");
             }
 
-            Dictionary<TKey, TElement> d = new Dictionary<TKey, TElement>(comparer);
-            foreach (TSource element in source)
+            var d = new Dictionary<TKey, TElement>(comparer);
+            foreach (var element in source)
             {
                 d.AddOrSet(keySelector(element), elementSelector(element));
             }
@@ -250,11 +251,11 @@
                 }
             }
             return value;
-        }
-
+        }      
+        
         internal static TSource SafeAggregate<TSource>(this IEnumerable<TSource> source, Func<TSource, TSource, TSource> func)
         {
-            TSource[] src = source.ToArray();
+            var src = source.ToArray();
             if (source != null && src.Any())
             {
                 return src.Aggregate(func);

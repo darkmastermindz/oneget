@@ -21,64 +21,84 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         private Stream source;
         private long position;
         private long length;
-        private readonly Action<ConcatStream> nextStreamHandler;
+        private Action<ConcatStream> nextStreamHandler;
 
         public ConcatStream(Action<ConcatStream> nextStreamHandler)
         {
-            this.nextStreamHandler = nextStreamHandler ?? throw new ArgumentNullException("nextStreamHandler");
-            length = long.MaxValue;
+            if (nextStreamHandler == null)
+            {
+                throw new ArgumentNullException("nextStreamHandler");
+            }
+
+            this.nextStreamHandler = nextStreamHandler;
+            this.length = Int64.MaxValue;
         }
 
         public Stream Source
         {
-            get => source;
-            set => source = value;
+            get { return this.source; }
+            set { this.source = value; }
         }
 
-        public override bool CanRead => true;
+        public override bool CanRead
+        {
+            get { return true; }
+        }
 
-        public override bool CanWrite => true;
+        public override bool CanWrite
+        {
+            get { return true; }
+        }
 
-        public override bool CanSeek => false;
+        public override bool CanSeek
+        {
+            get { return false; }
+        }
 
-        public override long Length => length;
+        public override long Length
+        {
+            get
+            {
+                return this.length;
+            }
+        }
 
         public override long Position
         {
-            get => position;
-            set => throw new NotSupportedException();
+            get { return this.position; }
+            set { throw new NotSupportedException(); }
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (source == null)
+            if (this.source == null)
             {
-                nextStreamHandler(this);
+                this.nextStreamHandler(this);
             }
 
-            count = (int)Math.Min(count, length - position);
+            count = (int) Math.Min(count, this.length - this.position);
 
             int bytesRemaining = count;
             while (bytesRemaining > 0)
             {
-                if (source == null)
+                if (this.source == null)
                 {
                     throw new InvalidOperationException();
                 }
 
-                int partialCount = (int)Math.Min(bytesRemaining,
-                    source.Length - source.Position);
+                int partialCount = (int) Math.Min(bytesRemaining,
+                    this.source.Length - this.source.Position);
 
                 if (partialCount == 0)
                 {
-                    nextStreamHandler(this);
+                    this.nextStreamHandler(this);
                     continue;
                 }
 
-                partialCount = source.Read(
+                partialCount = this.source.Read(
                     buffer, offset + count - bytesRemaining, partialCount);
                 bytesRemaining -= partialCount;
-                position += partialCount;
+                this.position += partialCount;
             }
 
             return count;
@@ -86,40 +106,40 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (source == null)
+            if (this.source == null)
             {
-                nextStreamHandler(this);
+                this.nextStreamHandler(this);
             }
 
             int bytesRemaining = count;
             while (bytesRemaining > 0)
             {
-                if (source == null)
+                if (this.source == null)
                 {
                     throw new InvalidOperationException();
                 }
 
-                int partialCount = (int)Math.Min(bytesRemaining,
-                    Math.Max(0, length - source.Position));
+                int partialCount = (int) Math.Min(bytesRemaining,
+                    Math.Max(0, this.length - this.source.Position));
 
                 if (partialCount == 0)
                 {
-                    nextStreamHandler(this);
+                    this.nextStreamHandler(this);
                     continue;
                 }
 
-                source.Write(
+                this.source.Write(
                     buffer, offset + count - bytesRemaining, partialCount);
                 bytesRemaining -= partialCount;
-                position += partialCount;
+                this.position += partialCount;
             }
         }
 
         public override void Flush()
         {
-            if (source != null)
+            if (this.source != null)
             {
-                source.Flush();
+                this.source.Flush();
             }
         }
 
@@ -130,22 +150,20 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
 
         public override void SetLength(long value)
         {
-            length = value;
+            this.length = value;
         }
 
 #if !CORECLR
-
         /// <summary>
         /// Closes underying stream
         /// </summary>
         public override void Close()
         {
-            if (source != null)
+            if (this.source != null)
             {
-                source.Close();
+                this.source.Close();
             }
         }
-
 #endif
 
         /// <summary>
@@ -156,7 +174,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression.Zip
         {
             if (disposing)
             {
-                source.Dispose();
+                this.source.Dispose();
             }
         }
     }

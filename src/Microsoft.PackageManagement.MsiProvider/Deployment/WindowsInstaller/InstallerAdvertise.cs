@@ -7,6 +7,7 @@
 // </summary>
 //---------------------------------------------------------------------
 
+
 namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 {
     using System;
@@ -45,7 +46,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new FileNotFoundException(null, packagePath);
             }
 
-            uint ret = NativeMethods.MsiAdvertiseProduct(packagePath, new IntPtr(perUser ? 1 : 0), transforms, (ushort)locale);
+            uint ret = NativeMethods.MsiAdvertiseProduct(packagePath, new IntPtr(perUser ? 1 : 0), transforms, (ushort) locale);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -79,7 +80,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new FileNotFoundException(null, packagePath);
             }
 
-            uint ret = NativeMethods.MsiAdvertiseProduct(packagePath, scriptFilePath, transforms, (ushort)locale);
+            uint ret = NativeMethods.MsiAdvertiseProduct(packagePath, scriptFilePath, transforms, (ushort) locale);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -130,18 +131,18 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             uint platform = 0;
             switch (processor)
             {
-                case ProcessorArchitecture.X86: platform = 1; break;
-                case ProcessorArchitecture.IA64: platform = 2; break;
-                case ProcessorArchitecture.Amd64: platform = 4; break;
+                case ProcessorArchitecture.X86: platform = (uint) 1; break;
+                case ProcessorArchitecture.IA64: platform = (uint) 2; break;
+                case ProcessorArchitecture.Amd64: platform = (uint) 4; break;
             }
 
             uint ret = NativeMethods.MsiAdvertiseProductEx(
                 packagePath,
                 scriptFilePath,
                 transforms,
-                (ushort)locale,
+                (ushort) locale,
                 platform,
-                instance ? (uint)1 : 0);
+                instance ? (uint) 1 : 0);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -164,7 +165,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [SuppressMessage("Microsoft.Naming", "CA1726:UsePreferredTerms", MessageId = "flags")]
         public static void AdvertiseScript(string scriptFile, int flags, bool removeItems)
         {
-            uint ret = NativeMethods.MsiAdvertiseScript(scriptFile, (uint)flags, IntPtr.Zero, removeItems);
+            uint ret = NativeMethods.MsiAdvertiseScript(scriptFile, (uint) flags, IntPtr.Zero, removeItems);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -224,25 +225,27 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
                 throw new ArgumentNullException("scriptFile");
             }
             StringBuilder productCodeBuf = new StringBuilder(40);
+            ushort lang;
+            uint ver;
             StringBuilder productNameBuf = new StringBuilder(100);
             StringBuilder packageNameBuf = new StringBuilder(40);
-            uint productCodeBufSize = (uint)productCodeBuf.Capacity;
-            uint productNameBufSize = (uint)productNameBuf.Capacity;
-            uint packageNameBufSize = (uint)packageNameBuf.Capacity;
+            uint productCodeBufSize = (uint) productCodeBuf.Capacity;
+            uint productNameBufSize = (uint) productNameBuf.Capacity;
+            uint packageNameBufSize = (uint) packageNameBuf.Capacity;
             uint ret = NativeMethods.MsiGetProductInfoFromScript(
                 scriptFile,
                 productCodeBuf,
-                out ushort lang,
-                out uint ver,
+                out lang,
+                out ver,
                 productNameBuf,
                 ref productNameBufSize,
                 packageNameBuf,
                 ref packageNameBufSize);
-            if (ret == (uint)NativeMethods.Error.MORE_DATA)
+            if (ret == (uint) NativeMethods.Error.MORE_DATA)
             {
-                productCodeBuf.Capacity = (int)++productCodeBufSize;
-                productNameBuf.Capacity = (int)++productNameBufSize;
-                packageNameBuf.Capacity = (int)++packageNameBufSize;
+                productCodeBuf.Capacity = (int) ++productCodeBufSize;
+                productNameBuf.Capacity = (int) ++productNameBufSize;
+                packageNameBuf.Capacity = (int) ++packageNameBufSize;
                 ret = NativeMethods.MsiGetProductInfoFromScript(
                     scriptFile,
                     productCodeBuf,
@@ -261,16 +264,14 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
             uint verPart1 = ver >> 24;
             uint verPart2 = (ver & 0x00FFFFFF) >> 16;
             uint verPart3 = ver & 0x0000FFFF;
-            Version version = new Version((int)verPart1, (int)verPart2, (int)verPart3);
+            Version version = new Version((int) verPart1, (int) verPart2, (int) verPart3);
 
-            IDictionary<string, string> props = new Dictionary<string, string>
-            {
-                ["ProductCode"] = productCodeBuf.ToString(),
-                ["Language"] = lang.ToString(CultureInfo.InvariantCulture),
-                ["Version"] = version.ToString(),
-                ["ProductName"] = productNameBuf.ToString(),
-                ["PackageName"] = packageNameBuf.ToString()
-            };
+            IDictionary<string, string> props = new Dictionary<string, string>();
+            props["ProductCode"] = productCodeBuf.ToString();
+            props["Language"] = lang.ToString(CultureInfo.InvariantCulture);
+            props["Version"] = version.ToString();
+            props["ProductName"] = productNameBuf.ToString();
+            props["PackageName"] = packageNameBuf.ToString();
             return new ProductInstallation(props);
         }
     }

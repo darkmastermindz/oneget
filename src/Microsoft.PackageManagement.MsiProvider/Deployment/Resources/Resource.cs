@@ -46,8 +46,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <param name="data">Raw resource data</param>
         public Resource(ResourceType type, string name, int locale, byte[] data)
         {
+            if (name == null)
+            {
+                throw new ArgumentNullException("name");
+            }
+
             this.type = type;
-            this.name = name ?? throw new ArgumentNullException("name");
+            this.name = name;
             this.locale = locale;
             this.data = data;
         }
@@ -59,8 +64,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public ResourceType ResourceType
         {
-            get => type;
-            set => type = value;
+            get { return this.type; }
+            set { this.type = value; }
         }
 
         /// <summary>
@@ -69,9 +74,20 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Name
         {
-            get => name;
+            get
+            {
+                return this.name;
+            }
 
-            set => name = value ?? throw new ArgumentNullException("value");
+            set
+            {
+                if (value == null)
+                {
+                    throw new ArgumentNullException("value");
+                }
+
+                this.name = value;
+            }
         }
 
         /// <summary>
@@ -80,8 +96,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int Locale
         {
-            get => locale;
-            set => locale = value;
+            get { return this.locale; }
+            set { this.locale = value; }
         }
 
         /// <summary>
@@ -90,8 +106,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1819:PropertiesShouldNotReturnArrays")]
         public virtual byte[] Data
         {
-            get => data;
-            set => data = value;
+            get { return this.data; }
+            set { this.data = value; }
         }
 
         /// <summary>
@@ -108,7 +124,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
             IntPtr module = NativeMethods.LoadLibraryEx(file, IntPtr.Zero, NativeMethods.LOAD_LIBRARY_AS_DATAFILE);
             try
             {
-                Load(module);
+                this.Load(module);
             }
             finally
             {
@@ -119,7 +135,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal void Load(IntPtr module)
         {
-            IntPtr resourceInfo = NativeMethods.FindResourceEx(module, (string)ResourceType, Name, (ushort)Locale);
+            IntPtr resourceInfo = NativeMethods.FindResourceEx(module, (string) this.ResourceType, this.Name, (ushort) this.Locale);
             if (resourceInfo != IntPtr.Zero)
             {
                 uint resourceLength = NativeMethods.SizeofResource(module, resourceInfo);
@@ -127,11 +143,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
                 IntPtr resourcePtr = NativeMethods.LockResource(resourceData);
                 byte[] resourceBytes = new byte[resourceLength];
                 Marshal.Copy(resourcePtr, resourceBytes, 0, resourceBytes.Length);
-                Data = resourceBytes;
+                this.Data = resourceBytes;
             }
             else
             {
-                Data = null;
+                this.Data = null;
             }
         }
 
@@ -150,11 +166,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
             try
             {
                 updateHandle = NativeMethods.BeginUpdateResource(file, false);
-                Save(updateHandle);
+                this.Save(updateHandle);
                 if (!NativeMethods.EndUpdateResource(updateHandle, false))
                 {
                     int err = Marshal.GetLastWin32Error();
-                    throw new IOException(string.Format(CultureInfo.InvariantCulture, "Failed to save resource. Error code: {0}", err));
+                    throw new IOException(String.Format(CultureInfo.InvariantCulture, "Failed to save resource. Error code: {0}", err));
                 }
                 updateHandle = IntPtr.Zero;
             }
@@ -174,22 +190,22 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
             try
             {
                 int dataLength = 0;
-                if (Data != null)
+                if (this.Data != null)
                 {
-                    dataLength = Data.Length;
+                    dataLength = this.Data.Length;
                     dataPtr = Marshal.AllocHGlobal(dataLength);
-                    Marshal.Copy(Data, 0, dataPtr, dataLength);
+                    Marshal.Copy(this.Data, 0, dataPtr, dataLength);
                 }
                 bool updateSuccess;
-                if (Name.StartsWith("#", StringComparison.Ordinal))
+                if (this.Name.StartsWith("#", StringComparison.Ordinal))
                 {
                     // A numeric-named resource must be saved via the integer version of UpdateResource.
-                    IntPtr intName = new IntPtr(int.Parse(Name.Substring(1), CultureInfo.InvariantCulture));
-                    updateSuccess = NativeMethods.UpdateResource(updateHandle, new IntPtr(ResourceType.IntegerValue), intName, (ushort)Locale, dataPtr, (uint)dataLength);
+                    IntPtr intName = new IntPtr(Int32.Parse(this.Name.Substring(1), CultureInfo.InvariantCulture));
+                    updateSuccess = NativeMethods.UpdateResource(updateHandle, new IntPtr(this.ResourceType.IntegerValue), intName, (ushort) this.Locale, dataPtr, (uint) dataLength);
                 }
                 else
                 {
-                    updateSuccess = NativeMethods.UpdateResource(updateHandle, (string)ResourceType, Name, (ushort)Locale, dataPtr, (uint)dataLength);
+                    updateSuccess = NativeMethods.UpdateResource(updateHandle, (string) this.ResourceType, this.Name, (ushort) this.Locale, dataPtr, (uint) dataLength);
                 }
                 if (!updateSuccess)
                 {
@@ -212,12 +228,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <returns>True if the objects represent the same resource; false otherwise.</returns>
         public override bool Equals(object obj)
         {
-            if (!(obj is Resource res))
-            {
-                return false;
-            }
-
-            return ResourceType == res.ResourceType && Name == res.Name && Locale == res.Locale;
+            Resource res = obj as Resource;
+            if (res == null) return false;
+            return this.ResourceType == res.ResourceType && this.Name == res.Name && this.Locale == res.Locale;
         }
 
         /// <summary>
@@ -226,7 +239,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.Resources
         /// <returns>Hash code generated from the resource type, name, and locale.</returns>
         public override int GetHashCode()
         {
-            return ResourceType.GetHashCode() ^ Name.GetHashCode() ^ Locale.GetHashCode();
+            return this.ResourceType.GetHashCode() ^ this.Name.GetHashCode() ^ this.Locale.GetHashCode();
         }
     }
 }

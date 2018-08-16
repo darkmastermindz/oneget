@@ -19,8 +19,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
     [SuppressMessage("Microsoft.Performance", "CA1815:OverrideEqualsAndOperatorEqualsOnValueTypes")]
     public struct ValidationErrorInfo
     {
-        private readonly ValidationError error;
-        private readonly string column;
+        private ValidationError error;
+        private string column;
 
         [SuppressMessage("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal ValidationErrorInfo(ValidationError error, string column)
@@ -32,11 +32,23 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <summary>
         /// Gets the type of validation error encountered.
         /// </summary>
-        public ValidationError Error => error;
+        public ValidationError Error
+        {
+            get
+            {
+                return this.error;
+            }
+        }
 
         /// <summary>
         /// Gets the column containing the error, or null if the error applies to the whole row.
         /// </summary>
-        public string Column => column;
+        public string Column
+        {
+            get
+            {
+                return this.column;
+            }
+        }
     }
 }

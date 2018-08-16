@@ -84,14 +84,19 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
         /// <param name="table">name of the table</param>
         public QTable(QDatabase db, string table)
         {
+            if (db == null)
+            {
+                throw new ArgumentNullException("db");
+            }
+
             if (string.IsNullOrWhiteSpace(table))
             {
                 throw new ArgumentNullException("table");
             }
 
-            this.db = db ?? throw new ArgumentNullException("db");
-            tableInfo = db.Tables[table];
-            if (tableInfo == null)
+            this.db = db;
+            this.tableInfo = db.Tables[table];
+            if (this.tableInfo == null)
             {
                 throw new ArgumentException(
                     "Table does not exist in database: " + table);
@@ -101,12 +106,24 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
         /// <summary>
         /// Gets schema information about the table.
         /// </summary>
-        public TableInfo TableInfo => tableInfo;
+        public TableInfo TableInfo
+        {
+            get
+            {
+                return this.tableInfo;
+            }
+        }
 
         /// <summary>
         /// Gets the database this table is associated with.
         /// </summary>
-        public QDatabase Database => db;
+        public QDatabase Database
+        {
+            get
+            {
+                return this.db;
+            }
+        }
 
         /// <summary>
         /// Enumerates over all records in the table.
@@ -114,9 +131,9 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
         /// <returns></returns>
         public IEnumerator<TRecord> GetEnumerator()
         {
-            string query = tableInfo.SqlSelectString;
+            string query = this.tableInfo.SqlSelectString;
 
-            TextWriter log = db.Log;
+            TextWriter log = this.db.Log;
             if (log != null)
             {
                 log.WriteLine();
@@ -127,7 +144,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
             {
                 view.Execute();
 
-                ColumnCollection columns = tableInfo.Columns;
+                ColumnCollection columns = this.tableInfo.Columns;
                 int columnCount = columns.Count;
                 bool[] isBinary = new bool[columnCount];
 
@@ -136,32 +153,27 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
                     isBinary[i] = columns[i].Type == typeof(System.IO.Stream);
                 }
 
-                foreach (Record rec in view)
+                foreach (Record rec in view) using (rec)
                 {
-                    using (rec)
+                    string[] values = new string[columnCount];
+                    for (int i = 0; i < values.Length; i++)
                     {
-                        string[] values = new string[columnCount];
-                        for (int i = 0; i < values.Length; i++)
-                        {
-                            values[i] = isBinary[i] ? "[Binary Data]" : rec.GetString(i + 1);
-                        }
-
-                        TRecord trec = new TRecord
-                        {
-                            Database = Database,
-                            TableInfo = TableInfo,
-                            Values = values,
-                            Exists = true
-                        };
-                        yield return trec;
+                        values[i] = isBinary[i] ? "[Binary Data]" : rec.GetString(i + 1);
                     }
+
+                    TRecord trec = new TRecord();
+                    trec.Database = this.Database;
+                    trec.TableInfo = this.TableInfo;
+                    trec.Values = values;
+                    trec.Exists = true;
+                    yield return trec;
                 }
             }
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return (this).GetEnumerator();
+            return ((IEnumerable<TRecord>) this).GetEnumerator();
         }
 
         IQueryable<TElement> IQueryProvider.CreateQuery<TElement>(Expression expression)
@@ -171,36 +183,36 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
                 throw new ArgumentNullException("expression");
             }
 
-            Query<TElement> q = new Query<TElement>(Database, expression);
+            Query<TElement> q = new Query<TElement>(this.Database, expression);
 
-            MethodCallExpression methodCallExpression = (MethodCallExpression)expression;
+            MethodCallExpression methodCallExpression = (MethodCallExpression) expression;
             string methodName = methodCallExpression.Method.Name;
             if (methodName == "Where")
             {
                 LambdaExpression argumentExpression = (LambdaExpression)
-                    ((UnaryExpression)methodCallExpression.Arguments[1]).Operand;
-                q.BuildQuery(TableInfo, argumentExpression);
+                    ((UnaryExpression) methodCallExpression.Arguments[1]).Operand;
+                q.BuildQuery(this.TableInfo, argumentExpression);
             }
             else if (methodName == "OrderBy")
             {
                 LambdaExpression argumentExpression = (LambdaExpression)
-                    ((UnaryExpression)methodCallExpression.Arguments[1]).Operand;
-                q.BuildSequence(TableInfo, argumentExpression);
+                    ((UnaryExpression) methodCallExpression.Arguments[1]).Operand;
+                q.BuildSequence(this.TableInfo, argumentExpression);
             }
             else if (methodName == "Select")
             {
                 LambdaExpression argumentExpression = (LambdaExpression)
-                    ((UnaryExpression)methodCallExpression.Arguments[1]).Operand;
-                q.BuildNullQuery(TableInfo, typeof(TRecord), argumentExpression);
+                    ((UnaryExpression) methodCallExpression.Arguments[1]).Operand;
+                q.BuildNullQuery(this.TableInfo, typeof(TRecord), argumentExpression);
                 q.BuildProjection(null, argumentExpression);
             }
             else if (methodName == "Join")
             {
                 ConstantExpression constantExpression = (ConstantExpression)
                     methodCallExpression.Arguments[1];
-                IQueryable inner = (IQueryable)constantExpression.Value;
+                IQueryable inner = (IQueryable) constantExpression.Value;
                 q.PerformJoin(
-                    TableInfo,
+                    this.TableInfo,
                     typeof(TRecord),
                     inner,
                     GetJoinLambda(methodCallExpression.Arguments[2]),
@@ -218,13 +230,13 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
 
         private static LambdaExpression GetJoinLambda(Expression expression)
         {
-            UnaryExpression unaryExpression = (UnaryExpression)expression;
-            return (LambdaExpression)unaryExpression.Operand;
+            UnaryExpression unaryExpression = (UnaryExpression) expression;
+            return (LambdaExpression) unaryExpression.Operand;
         }
 
         IQueryable IQueryProvider.CreateQuery(Expression expression)
         {
-            return ((IQueryProvider)this).CreateQuery<TRecord>(expression);
+            return ((IQueryProvider) this).CreateQuery<TRecord>(expression);
         }
 
         TResult IQueryProvider.Execute<TResult>(Expression expression)
@@ -239,11 +251,29 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
                 "Direct method calls not supported -- use AsEnumerable() instead.");
         }
 
-        IQueryProvider IQueryable.Provider => this;
+        IQueryProvider IQueryable.Provider
+        {
+            get
+            {
+                return this;
+            }
+        }
 
-        Type IQueryable.ElementType => typeof(TRecord);
+        Type IQueryable.ElementType
+        {
+            get
+            {
+                return typeof(TRecord);
+            }
+        }
 
-        Expression IQueryable.Expression => Expression.Constant(this);
+        Expression IQueryable.Expression
+        {
+            get
+            {
+                return Expression.Constant(this);
+            }
+        }
 
         /// <summary>
         /// Creates a new record that can be inserted into this table.
@@ -257,13 +287,11 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller.L
         /// </remarks>
         public TRecord NewRecord()
         {
-            TRecord rec = new TRecord
-            {
-                Database = Database,
-                TableInfo = TableInfo
-            };
-            IList<string> values = new List<string>(TableInfo.Columns.Count);
-            for (int i = 0; i < TableInfo.Columns.Count; i++)
+            TRecord rec = new TRecord();
+            rec.Database = this.Database;
+            rec.TableInfo = this.TableInfo;
+            IList<string> values = new List<string>(this.TableInfo.Columns.Count);
+            for (int i = 0; i < this.TableInfo.Columns.Count; i++)
             {
                 values.Add(null);
             }

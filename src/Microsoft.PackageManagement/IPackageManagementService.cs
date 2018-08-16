@@ -12,13 +12,13 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PackageManagement.Internal
-{
-    using Api;
-    using PackageManagement.Implementation;
-    using PackageManagement.Packaging;
+namespace Microsoft.PackageManagement.Internal {
     using System;
     using System.Collections.Generic;
+    using Api;
+    using Implementation;
+    using PackageManagement.Implementation;
+    using PackageManagement.Packaging;
 
     /// <summary>
     ///     The current Package Management Service Interface
@@ -28,15 +28,14 @@ namespace Microsoft.PackageManagement.Internal
     ///     into their own project and use the <code>PackageManagementService.GetInstance<![CDATA[<>]]></code>
     ///     method to dynamically generate a matching implementation at load time.
     /// </summary>
-    public interface IPackageManagementService
-    {
-        int Version { get; }
+    public interface IPackageManagementService {
+        int Version {get;}
 
-        IEnumerable<string> ProviderNames { get; }
+        IEnumerable<string> ProviderNames {get;}
 
         IEnumerable<string> AllProviderNames { get; }
 
-        IEnumerable<PackageProvider> PackageProviders { get; }
+        IEnumerable<PackageProvider> PackageProviders {get;}
 
         IEnumerable<PackageProvider> GetAvailableProviders(IHostApi requestObject, string[] names);
 

@@ -24,9 +24,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
     public class ArchiveFileStreamContext
         : IPackStreamContext, IUnpackStreamContext
     {
-        private readonly IList<string> archiveFiles;
-        private readonly string directory;
-        private readonly IDictionary<string, string> files;
+        private IList<string> archiveFiles;
+        private string directory;
+        private IDictionary<string, string> files;
         private bool extractOnlyNewerFiles;
         private bool enableOffsetOpen;
 
@@ -115,7 +115,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             this.files = files;
         }
 
-        #endregion Constructors
+        #endregion
 
         #region Properties
 
@@ -123,7 +123,13 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// Gets or sets the list of archive files that are created or extracted.
         /// </summary>
         /// <value>The list of archive files that are created or extracted.</value>
-        public IList<string> ArchiveFiles => archiveFiles;
+        public IList<string> ArchiveFiles
+        {
+            get
+            {
+                return this.archiveFiles;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the default root directory where files are located.
@@ -133,7 +139,13 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// For details about how the default directory is used,
         /// see <see cref="OpenFileReadStream"/> and <see cref="OpenFileWriteStream"/>.
         /// </remarks>
-        public string Directory => directory;
+        public string Directory
+        {
+            get
+            {
+                return this.directory;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the mapping from internal file paths to external file paths.
@@ -143,7 +155,13 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// For details about how the files mapping is used,
         /// see <see cref="OpenFileReadStream"/> and <see cref="OpenFileWriteStream"/>.
         /// </remarks>
-        public IDictionary<string, string> Files => files;
+        public IDictionary<string, string> Files
+        {
+            get
+            {
+                return this.files;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a flag that can prevent extracted files from overwriting
@@ -154,9 +172,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// of existing files.</value>
         public bool ExtractOnlyNewerFiles
         {
-            get => extractOnlyNewerFiles;
+            get
+            {
+                return this.extractOnlyNewerFiles;
+            }
 
-            set => extractOnlyNewerFiles = value;
+            set
+            {
+                this.extractOnlyNewerFiles = value;
+            }
         }
 
         /// <summary>
@@ -169,12 +193,18 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// archive file.</value>
         public bool EnableOffsetOpen
         {
-            get => enableOffsetOpen;
+            get
+            {
+                return this.enableOffsetOpen;
+            }
 
-            set => enableOffsetOpen = value;
+            set
+            {
+                this.enableOffsetOpen = value;
+            }
         }
 
-        #endregion Properties
+        #endregion
 
         #region IPackStreamContext Members
 
@@ -191,12 +221,12 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         /// file name should not include any directory path.</remarks>
         public virtual string GetArchiveName(int archiveNumber)
         {
-            if (archiveNumber < archiveFiles.Count)
+            if (archiveNumber < this.archiveFiles.Count)
             {
-                return Path.GetFileName(archiveFiles[archiveNumber]);
+                return Path.GetFileName(this.archiveFiles[archiveNumber]);
             }
 
-            return string.Empty;
+            return String.Empty;
         }
 
         /// <summary>
@@ -227,7 +257,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             bool truncate,
             CompressionEngine compressionEngine)
         {
-            if (archiveNumber >= archiveFiles.Count)
+            if (archiveNumber >= this.archiveFiles.Count)
             {
                 return null;
             }
@@ -240,16 +270,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             // All archives must be in the same directory,
             // so always use the directory from the first archive.
             string archiveFile = Path.Combine(
-                Path.GetDirectoryName(archiveFiles[0]), archiveName);
+                Path.GetDirectoryName(this.archiveFiles[0]), archiveName);
             Stream stream = File.Open(
                 archiveFile,
                 (truncate ? FileMode.OpenOrCreate : FileMode.Open),
                 FileAccess.ReadWrite);
 
-            if (enableOffsetOpen)
+            if (this.enableOffsetOpen)
             {
-                if (compressionEngine == null)
-                {
+                if (compressionEngine == null) {
                     throw new ArgumentNullException("compressionEngine");
                 }
 
@@ -299,17 +328,17 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
                 stream.Dispose();
 #else
                 stream.Close();
-
 #endif
 
-                if (stream is FileStream fileStream)
+                FileStream fileStream = stream as FileStream;
+                if (fileStream != null)
                 {
                     string streamFile = fileStream.Name;
                     if (!string.IsNullOrWhiteSpace(archiveName) &&
                         archiveName != Path.GetFileName(streamFile))
                     {
                         string archiveFile = Path.Combine(
-                            Path.GetDirectoryName(archiveFiles[0]), archiveName);
+                            Path.GetDirectoryName(this.archiveFiles[0]), archiveName);
                         if (File.Exists(archiveFile))
                         {
                             File.Delete(archiveFile);
@@ -355,7 +384,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         public virtual Stream OpenFileReadStream(
             string path, out FileAttributes attributes, out DateTime lastWriteTime)
         {
-            string filePath = TranslateFilePath(path);
+            string filePath = this.TranslateFilePath(path);
 
             if (filePath == null)
             {
@@ -405,7 +434,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             return null;
         }
 
-        #endregion IPackStreamContext Members
+        #endregion
 
         #region IUnpackStreamContext Members
 
@@ -430,19 +459,18 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         public virtual Stream OpenArchiveReadStream(
             int archiveNumber, string archiveName, CompressionEngine compressionEngine)
         {
-            if (archiveNumber >= archiveFiles.Count)
+            if (archiveNumber >= this.archiveFiles.Count)
             {
                 return null;
             }
 
-            string archiveFile = archiveFiles[archiveNumber];
+            string archiveFile = this.archiveFiles[archiveNumber];
             Stream stream = File.Open(
                 archiveFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            if (enableOffsetOpen)
+            if (this.enableOffsetOpen)
             {
-                if (compressionEngine == null)
-                {
+                if (compressionEngine == null) {
                     throw new ArgumentNullException("compressionEngine");
                 }
                 long offset = compressionEngine.FindArchiveOffset(
@@ -520,7 +548,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             long fileSize,
             DateTime lastWriteTime)
         {
-            string filePath = TranslateFilePath(path);
+            string filePath = this.TranslateFilePath(path);
 
             if (filePath == null)
             {
@@ -530,7 +558,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             FileInfo file = new FileInfo(filePath);
             if (file.Exists)
             {
-                if (extractOnlyNewerFiles && lastWriteTime != DateTime.MinValue)
+                if (this.extractOnlyNewerFiles && lastWriteTime != DateTime.MinValue)
                 {
                     if (file.LastWriteTime >= lastWriteTime)
                     {
@@ -584,7 +612,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
 #endif
             }
 
-            string filePath = TranslateFilePath(path);
+            string filePath = this.TranslateFilePath(path);
             if (filePath != null)
             {
                 FileInfo file = new FileInfo(filePath);
@@ -613,7 +641,7 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
             }
         }
 
-        #endregion IUnpackStreamContext Members
+        #endregion
 
         #region Private utility methods
 
@@ -629,9 +657,9 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
         private string TranslateFilePath(string path)
         {
             string filePath;
-            if (files != null)
+            if (this.files != null)
             {
-                filePath = files[path];
+                filePath = this.files[path];
             }
             else
             {
@@ -640,15 +668,15 @@ namespace Microsoft.PackageManagement.Archivers.Internal.Compression
 
             if (filePath != null)
             {
-                if (directory != null)
+                if (this.directory != null)
                 {
-                    filePath = Path.Combine(directory, filePath);
+                    filePath = Path.Combine(this.directory, filePath);
                 }
             }
 
             return filePath;
         }
 
-        #endregion Private utility methods
+        #endregion
     }
 }

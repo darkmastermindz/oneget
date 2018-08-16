@@ -39,7 +39,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// <a href="http://msdn.microsoft.com/library/en-us/msi/setup/msigetsummaryinformation.asp">MsiGetSummaryInformation</a>
         /// </p></remarks>
         public SummaryInfo(string packagePath, bool enableWrite)
-            : base((IntPtr)SummaryInfo.OpenSummaryInfo(packagePath, enableWrite), true)
+            : base((IntPtr) SummaryInfo.OpenSummaryInfo(packagePath, enableWrite), true)
         {
         }
 
@@ -61,8 +61,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Title
         {
-            get => this[2];
-            set => this[2] = value;
+            get { return this[2]; }
+            set { this[2] = value; }
         }
 
         /// <summary>Gets or sets the Subject summary information property.</summary>
@@ -79,8 +79,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Subject
         {
-            get => this[3];
-            set => this[3] = value;
+            get { return this[3]; }
+            set { this[3] = value; }
         }
 
         /// <summary>Gets or sets the Author summary information property.</summary>
@@ -95,8 +95,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Author
         {
-            get => this[4];
-            set => this[4] = value;
+            get { return this[4]; }
+            set { this[4] = value; }
         }
 
         /// <summary>Gets or sets the Keywords summary information property.</summary>
@@ -112,8 +112,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Keywords
         {
-            get => this[5];
-            set => this[5] = value;
+            get { return this[5]; }
+            set { this[5] = value; }
         }
 
         /// <summary>Gets or sets the Comments summary information property.</summary>
@@ -133,8 +133,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Comments
         {
-            get => this[6];
-            set => this[6] = value;
+            get { return this[6]; }
+            set { this[6] = value; }
         }
 
         /// <summary>Gets or sets the Template summary information property.</summary>
@@ -182,8 +182,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string Template
         {
-            get => this[7];
-            set => this[7] = value;
+            get { return this[7]; }
+            set { this[7] = value; }
         }
 
         /// <summary>Gets or sets the LastSavedBy summary information property.</summary>
@@ -203,8 +203,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string LastSavedBy
         {
-            get => this[8];
-            set => this[8] = value;
+            get { return this[8]; }
+            set { this[8] = value; }
         }
 
         /// <summary>Gets or sets the RevisionNumber summary information property.</summary>
@@ -231,8 +231,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string RevisionNumber
         {
-            get => this[9];
-            set => this[9] = value;
+            get { return this[9]; }
+            set { this[9] = value; }
         }
 
         /// <summary>Gets or sets the CreatingApp summary information property.</summary>
@@ -247,8 +247,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public string CreatingApp
         {
-            get => this[18];
-            set => this[18] = value;
+            get { return this[18]; }
+            set { this[18] = value; }
         }
 
         /// <summary>Gets or sets the LastPrintTime summary information property.</summary>
@@ -264,8 +264,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public DateTime LastPrintTime
         {
-            get => (DateTime)this[11, typeof(DateTime)];
-            set => this[11, typeof(DateTime)] = value;
+            get { return (DateTime) this[11, typeof(DateTime)]; }
+            set { this[11, typeof(DateTime)] = value; }
         }
 
         /// <summary>Gets or sets the CreateTime summary information property.</summary>
@@ -279,8 +279,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public DateTime CreateTime
         {
-            get => (DateTime)this[12, typeof(DateTime)];
-            set => this[12, typeof(DateTime)] = value;
+            get { return (DateTime) this[12, typeof(DateTime)]; }
+            set { this[12, typeof(DateTime)] = value; }
         }
 
         /// <summary>Gets or sets the LastSaveTime summary information property.</summary>
@@ -297,8 +297,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public DateTime LastSaveTime
         {
-            get => (DateTime)this[13, typeof(DateTime)];
-            set => this[13, typeof(DateTime)] = value;
+            get { return (DateTime) this[13, typeof(DateTime)]; }
+            set { this[13, typeof(DateTime)] = value; }
         }
 
         /// <summary>Gets or sets the CodePage summary information property.</summary>
@@ -317,8 +317,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public short CodePage
         {
-            get => (short)this[1, typeof(short)];
-            set => this[1, typeof(short)] = value;
+            get { return (short) this[1, typeof(short)]; }
+            set { this[1, typeof(short)] = value; }
         }
 
         /// <summary>Gets or sets the PageCount summary information property.</summary>
@@ -342,8 +342,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int PageCount
         {
-            get => (int)this[14, typeof(int)];
-            set => this[14, typeof(int)] = value;
+            get { return (int) this[14, typeof(int)]; }
+            set { this[14, typeof(int)] = value; }
         }
 
         /// <summary>Gets or sets the WordCount summary information property.</summary>
@@ -395,8 +395,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int WordCount
         {
-            get => (int)this[15, typeof(int)];
-            set => this[15, typeof(int)] = value;
+            get { return (int) this[15, typeof(int)]; }
+            set { this[15, typeof(int)] = value; }
         }
 
         /// <summary>Gets or sets the CharacterCount summary information property.</summary>
@@ -412,8 +412,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int CharacterCount
         {
-            get => (int)this[16, typeof(int)];
-            set => this[16, typeof(int)] = value;
+            get { return (int) this[16, typeof(int)]; }
+            set { this[16, typeof(int)] = value; }
         }
 
         /// <summary>Gets or sets the Security summary information property.</summary>
@@ -437,8 +437,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         public int Security
         {
-            get => (int)this[19, typeof(int)];
-            set => this[19, typeof(int)] = value;
+            get { return (int) this[19, typeof(int)]; }
+            set { this[19, typeof(int)] = value; }
         }
 
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
@@ -446,132 +446,134 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         {
             get
             {
+                uint dataType;
                 StringBuilder stringValue = new StringBuilder("");
                 uint bufSize = 0;
+                int intValue;
                 long timeValue = 0;
 
                 uint ret = RemotableNativeMethods.MsiSummaryInfoGetProperty(
-                    (int)Handle,
+                    (int) this.Handle,
                     property,
-                    out uint dataType,
-                    out int intValue,
+                    out dataType,
+                    out intValue,
                     ref timeValue,
                     stringValue,
                     ref bufSize);
-                if (ret != 0 && dataType != (uint)VarEnum.VT_LPSTR)
+                if (ret != 0 && dataType != (uint) VarEnum.VT_LPSTR)
                 {
                     throw InstallerException.ExceptionFromReturnCode(ret);
                 }
 
-                switch ((VarEnum)dataType)
+                switch ((VarEnum) dataType)
                 {
                     case VarEnum.VT_EMPTY:
+                    {
+                        if (type == typeof(DateTime))
                         {
-                            if (type == typeof(DateTime))
-                            {
-                                return DateTime.MinValue;
-                            }
-                            else if (type == typeof(string))
-                            {
-                                return string.Empty;
-                            }
-                            else if (type == typeof(short))
-                            {
-                                return (short)0;
-                            }
-                            else
-                            {
-                                return 0;
-                            }
+                            return DateTime.MinValue;
                         }
+                        else if (type == typeof(string))
+                        {
+                            return String.Empty;
+                        }
+                        else if (type == typeof(short))
+                        {
+                            return (short) 0;
+                        }
+                        else
+                        {
+                            return (int) 0;
+                        }
+                    }
 
                     case VarEnum.VT_LPSTR:
+                    {
+                        if (ret == (uint) NativeMethods.Error.MORE_DATA)
                         {
-                            if (ret == (uint)NativeMethods.Error.MORE_DATA)
-                            {
-                                stringValue.Capacity = (int)++bufSize;
-                                ret = RemotableNativeMethods.MsiSummaryInfoGetProperty(
-                                    (int)Handle,
-                                    property,
-                                    out dataType,
-                                    out intValue,
-                                    ref timeValue,
-                                    stringValue,
-                                    ref bufSize);
-                            }
-                            if (ret != 0)
-                            {
-                                throw InstallerException.ExceptionFromReturnCode(ret);
-                            }
-                            return stringValue.ToString();
+                            stringValue.Capacity = (int) ++bufSize;
+                            ret = RemotableNativeMethods.MsiSummaryInfoGetProperty(
+                                (int) this.Handle,
+                                property,
+                                out dataType,
+                                out intValue,
+                                ref timeValue,
+                                stringValue,
+                                ref bufSize);
                         }
+                        if (ret != 0)
+                        {
+                            throw InstallerException.ExceptionFromReturnCode(ret);
+                        }
+                        return stringValue.ToString();
+                    }
 
                     case VarEnum.VT_I2:
                     case VarEnum.VT_I4:
+                    {
+                        if (type == typeof(string))
                         {
-                            if (type == typeof(string))
-                            {
-                                return intValue.ToString(CultureInfo.InvariantCulture);
-                            }
-                            else if (type == typeof(short))
-                            {
-                                return (short)intValue;
-                            }
-                            else
-                            {
-                                return intValue;
-                            }
+                            return intValue.ToString(CultureInfo.InvariantCulture);
                         }
+                        else if (type == typeof(short))
+                        {
+                            return (short) intValue;
+                        }
+                        else
+                        {
+                            return intValue;
+                        }
+                    }
 
                     case VarEnum.VT_FILETIME:
+                    {
+                        if (type == typeof(string))
                         {
-                            if (type == typeof(string))
-                            {
-                                return DateTime.FromFileTime(timeValue).ToString(CultureInfo.InvariantCulture);
-                            }
-                            else
-                            {
-                                return DateTime.FromFileTime(timeValue);
-                            }
+                            return DateTime.FromFileTime(timeValue).ToString(CultureInfo.InvariantCulture);
                         }
+                        else
+                        {
+                            return DateTime.FromFileTime(timeValue);
+                        }
+                    }
 
                     default:
-                        {
-                            throw new InstallerException();
-                        }
+                    {
+                        throw new InstallerException();
+                    }
                 }
             }
 
             set
             {
-                uint dataType = (uint)VarEnum.VT_NULL;
+                uint dataType = (uint) VarEnum.VT_NULL;
                 string stringValue = "";
                 int intValue = 0;
                 long timeValue = 0;
 
                 if (type == typeof(short))
                 {
-                    dataType = (uint)VarEnum.VT_I2;
-                    intValue = (short)value;  // Double cast because value is a *boxed* short.
+                    dataType = (uint) VarEnum.VT_I2;
+                    intValue = (int)(short) value;  // Double cast because value is a *boxed* short.
                 }
                 else if (type == typeof(int))
                 {
-                    dataType = (uint)VarEnum.VT_I4;
-                    intValue = (int)value;
+                    dataType = (uint) VarEnum.VT_I4;
+                    intValue = (int) value;
                 }
                 else if (type == typeof(string))
                 {
-                    dataType = (uint)VarEnum.VT_LPSTR;
-                    stringValue = (string)value;
+                    dataType = (uint) VarEnum.VT_LPSTR;
+                    stringValue = (string) value;
                 }
                 else // (type == typeof(DateTime))
                 {
-                    dataType = (uint)VarEnum.VT_FILETIME;
-                    timeValue = ((DateTime)value).ToFileTime();
+                    dataType = (uint) VarEnum.VT_FILETIME;
+                    timeValue = ((DateTime) value).ToFileTime();
                 }
 
                 uint ret = NativeMethods.MsiSummaryInfoSetProperty(
-                    (int)Handle,
+                    (int) this.Handle,
                     property,
                     dataType,
                     intValue,
@@ -587,8 +589,8 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         private string this[uint property]
         {
-            get => (string)this[property, typeof(string)];
-            set => this[property, typeof(string)] = value;
+            get { return (string) this[property, typeof(string)]; }
+            set { this[property, typeof(string)] = value; }
         }
 
         /// <summary>
@@ -604,7 +606,7 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
         /// </p></remarks>
         public void Persist()
         {
-            uint ret = NativeMethods.MsiSummaryInfoPersist((int)Handle);
+            uint ret = NativeMethods.MsiSummaryInfoPersist((int) this.Handle);
             if (ret != 0)
             {
                 throw InstallerException.ExceptionFromReturnCode(ret);
@@ -613,16 +615,17 @@ namespace Microsoft.PackageManagement.Msi.Internal.Deployment.WindowsInstaller
 
         private static int OpenSummaryInfo(string packagePath, bool enableWrite)
         {
+            int summaryInfoHandle;
             int maxProperties = !enableWrite ? 0 : SummaryInfo.MAX_PROPERTIES;
             uint ret = RemotableNativeMethods.MsiGetSummaryInformation(
                 0,
                 packagePath,
-                (uint)maxProperties,
-                out int summaryInfoHandle);
+                (uint) maxProperties,
+                out summaryInfoHandle);
             if (ret != 0)
             {
-                if (ret == (uint)NativeMethods.Error.FILE_NOT_FOUND ||
-                    ret == (uint)NativeMethods.Error.ACCESS_DENIED)
+                if (ret == (uint) NativeMethods.Error.FILE_NOT_FOUND ||
+                    ret == (uint) NativeMethods.Error.ACCESS_DENIED)
                 {
                     throw new FileNotFoundException(null, packagePath);
                 }

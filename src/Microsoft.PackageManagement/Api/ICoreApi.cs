@@ -12,13 +12,12 @@
 //  limitations under the License.
 //
 
-namespace Microsoft.PackageManagement.Internal.Api
-{
+namespace Microsoft.PackageManagement.Internal.Api {
+
     /// <summary>
     /// Provides access to CORE functionality to PROVIDERs as part of the current request object.
     /// </summary>
-    public interface ICoreApi
-    {
+    public interface ICoreApi {
         /// <summary>
         /// Returns a reference to the PackageManagementService object.
         /// </summary>
